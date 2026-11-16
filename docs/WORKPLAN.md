@@ -38,8 +38,8 @@
 | `A-08` | Re-evaluate top Pareto points from Stage 3 on full Stage 2 uncertainty draws | Rudraksh (A) | `A-07`, `B-02` | `outputs/tables/s3_pareto_reeval.csv` | `todo` |
 | `B-01` | Build contract reader + fast surrogate objective/constraint evaluator against `*_mock.*` | Aanya (B) | `B-00` | `src/optimise/evaluator.py`, `tests/optimise/test_evaluator.py` | `done` |
 | `B-02` | Implement NSGA-II (`pymoo`) problem with budget, adoption & infra constraints, baselines & decision plots | Aanya (B) | `B-01` | `src/optimise/nsga2.py`, `src/optimise/baselines.py`, `src/optimise/run.py`, `src/viz/decision.py`, `tests/optimise/test_nsga2.py` | `done` |
-| `B-03` | Implement custom NumPy MDP value iteration / backward induction (`src/planning/mdp.py`) | Aanya (B) | `B-01` | `src/planning/mdp.py`, `tests/planning/test_mdp.py` | `todo` |
-| `B-04` | Implement plain-Python HTN decomposition tree & STRIPS/PDDL files (`pyperplan`) | Aanya (B) | `P0-01` | `src/planning/htn.py`, `pddl/*.pddl`, `src/planning/pddl_runner.py` | `todo` |
+| `B-03` | Implement custom NumPy MDP value iteration / backward induction (`src/planning/mdp.py`) | Aanya (B) | `B-01` | `src/planning/mdp.py`, `tests/planning/test_mdp.py` | `done` |
+| `B-04` | Implement plain-Python HTN decomposition tree & STRIPS/PDDL files (`pyperplan`) | Aanya (B) | `P0-01` | `src/planning/htn.py`, `pddl/*.pddl`, `src/planning/pddl_runner.py`, `tests/planning/test_htn_pddl.py` | `done` |
 | `B-05` | Build equal-footing MDP vs GA stochastic rollout comparator & Pareto/plan visualisations | Aanya (B) | `B-02`, `B-03` | `src/planning/compare.py`, `src/viz/decision.py`, `outputs/figures/{s3,plan}_*.png` | `todo` |
 | `B-06` | Switch `use_mock_forecasts: false`, run final Stage 3 + MDP + sensitivity analyses | Aanya (B) | `A-07`, `B-05` | `outputs/tables/s3_pareto_front.csv`, `outputs/tables/plan_mdp_vs_ga_comparison.csv` | `todo` |
 | `S-01` | Literature review to replace `placeholder: needs literature` costs & effectiveness in `ASSUMPTIONS.md` | Shared | `P0-01` | `docs/ASSUMPTIONS.md` | `todo` |

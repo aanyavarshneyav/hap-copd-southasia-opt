@@ -292,6 +292,67 @@ class Stage3Evaluator:
         contracts = load_stage3_contracts(config, base_dir=base_dir)
         return cls(config=config, contracts=contracts)
 
+    def evaluate_effective_gains(
+        self,
+        eff_gain_u: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Evaluate 2040 DALYs (mean, lower, upper) and equity gaps from effective gains.
+
+        Args:
+            eff_gain_u: Array of shape ``(U,)`` or ``(N, U)`` containing effective
+                clean-cooking exposure gains above 2040 BAU per unit.
+
+        Returns:
+            Tuple ``(dalys_mean, dalys_lower, dalys_upper, equity_gap_asr, equity_gap_dalys_abs)``
+            each with shape ``(N,)`` (or ``(1,)`` if 1D input).
+        """
+        arr = np.asarray(eff_gain_u, dtype=float)
+        if arr.ndim == 1:
+            arr = arr[np.newaxis, :]
+        if arr.ndim != 2 or arr.shape[1] != self.n_units:
+            raise ValueError(
+                f"Expected eff_gain_u shape (N, {self.n_units}) or "
+                f"({self.n_units},), got {arr.shape}."
+            )
+
+        max_headroom = np.maximum(0.0, 1.0 - self._cf_bau_2040)[np.newaxis, :]
+        delta_c = np.minimum(np.maximum(0.0, arr), max_headroom)  # (N, U)
+
+        mult_female = np.exp(self._slope_female[np.newaxis, :] * delta_c)
+        mult_male = np.exp(self._slope_male[np.newaxis, :] * delta_c)
+        mult = np.stack([mult_female, mult_male], axis=-1)  # (N, U, 2)
+
+        bau_val = self._bau_dalys_val[np.newaxis, :, :]  # (1, U, 2)
+        bau_low = self._bau_dalys_low[np.newaxis, :, :]
+        bau_up = self._bau_dalys_up[np.newaxis, :, :]
+
+        dalys_mean_us = mult * bau_val
+        bau_lo_hw = mult * (bau_val - bau_low)
+        bau_hi_hw = mult * (bau_up - bau_val)
+        surr_hw = dalys_mean_us * (
+            1.96 * self._surrogate_sd[np.newaxis, :, np.newaxis] * delta_c[:, :, np.newaxis]
+        )
+        dalys_low_us = np.maximum(0.0, dalys_mean_us - np.hypot(bau_lo_hw, surr_hw))
+        dalys_up_us = dalys_mean_us + np.hypot(bau_hi_hw, surr_hw)
+
+        dalys_2040_mean = np.sum(dalys_mean_us, axis=(1, 2))
+        dalys_2040_lower = np.sum(dalys_low_us, axis=(1, 2))
+        dalys_2040_upper = np.sum(dalys_up_us, axis=(1, 2))
+
+        asr_us = mult * self._bau_asr_val[np.newaxis, :, :]  # (N, U, 2)
+        asr_gap_u = np.abs(asr_us[:, :, 0] - asr_us[:, :, 1])  # (N, U)
+        equity_gap_asr = np.sum(asr_gap_u * self._pop_weights[np.newaxis, :], axis=1)
+        equity_gap_dalys_abs = np.abs(
+            np.sum(dalys_mean_us[:, :, 0] - dalys_mean_us[:, :, 1], axis=1)
+        )
+        return (
+            dalys_2040_mean,
+            dalys_2040_lower,
+            dalys_2040_upper,
+            equity_gap_asr,
+            equity_gap_dalys_abs,
+        )
+
     def evaluate(self, x: np.ndarray) -> EvaluationResult:
         """Evaluate a single ``(48,)`` or batched ``(N, 48)`` decision array."""
         raw_arr = np.asarray(x, dtype=float)
@@ -316,39 +377,14 @@ class Stage3Evaluator:
             x_cook * self._non_infra_effectiveness[np.newaxis, :, :, np.newaxis],
             axis=(2, 3),
         )  # (N, U)
-        max_headroom = np.maximum(0.0, 1.0 - self._cf_bau_2040)[np.newaxis, :]
-        delta_c = np.minimum(eff_gain_u, max_headroom)  # (N, U)
 
-        # Log-linear sex-specific multipliers: M_female, M_male of shape (N, U)
-        mult_female = np.exp(self._slope_female[np.newaxis, :] * delta_c)
-        mult_male = np.exp(self._slope_male[np.newaxis, :] * delta_c)
-        mult = np.stack([mult_female, mult_male], axis=-1)  # (N, U, 2)
-
-        # Projected 2040 DALYs (mean, lower, upper) across units and sexes
-        bau_val = self._bau_dalys_val[np.newaxis, :, :]  # (1, U, 2)
-        bau_low = self._bau_dalys_low[np.newaxis, :, :]
-        bau_up = self._bau_dalys_up[np.newaxis, :, :]
-
-        dalys_mean_us = mult * bau_val
-        bau_lo_hw = mult * (bau_val - bau_low)
-        bau_hi_hw = mult * (bau_up - bau_val)
-        surr_hw = dalys_mean_us * (
-            1.96 * self._surrogate_sd[np.newaxis, :, np.newaxis] * delta_c[:, :, np.newaxis]
-        )
-        dalys_low_us = np.maximum(0.0, dalys_mean_us - np.hypot(bau_lo_hw, surr_hw))
-        dalys_up_us = dalys_mean_us + np.hypot(bau_hi_hw, surr_hw)
-
-        dalys_2040_mean = np.sum(dalys_mean_us, axis=(1, 2))
-        dalys_2040_lower = np.sum(dalys_low_us, axis=(1, 2))
-        dalys_2040_upper = np.sum(dalys_up_us, axis=(1, 2))
-
-        # Equity metrics
-        asr_us = mult * self._bau_asr_val[np.newaxis, :, :]  # (N, U, 2)
-        asr_gap_u = np.abs(asr_us[:, :, 0] - asr_us[:, :, 1])  # (N, U)
-        equity_gap_asr = np.sum(asr_gap_u * self._pop_weights[np.newaxis, :], axis=1)
-        equity_gap_dalys_abs = np.abs(
-            np.sum(dalys_mean_us[:, :, 0] - dalys_mean_us[:, :, 1], axis=1)
-        )
+        (
+            dalys_2040_mean,
+            dalys_2040_lower,
+            dalys_2040_upper,
+            equity_gap_asr,
+            equity_gap_dalys_abs,
+        ) = self.evaluate_effective_gains(eff_gain_u)
 
         # Costs (cooking continuous + infra binary indicator >= threshold)
         disc = self._period_discount[np.newaxis, np.newaxis, np.newaxis, :]

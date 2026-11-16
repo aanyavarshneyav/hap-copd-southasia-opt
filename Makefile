@@ -1,4 +1,4 @@
-.PHONY: help setup lint format test check mock-data validate-data stage1 stage2 stage3 planning all clean
+.PHONY: help setup lint format test check mock-data validate-data stage1 stage2 stage3 mdp planning all clean
 
 PYTHON := python3.12
 VENV := .venv
@@ -17,6 +17,7 @@ help:
 	@echo "  make stage1         [Phase 1+] Run Stage 1 historical analysis"
 	@echo "  make stage2         [Phase 2+] Run Stage 2 forecasting & CV"
 	@echo "  make stage3         [Phase 3+] Run Stage 3 NSGA-II optimisation"
+	@echo "  make mdp            [Phase 3+] Run Stage 4 custom NumPy MDP value iteration"
 	@echo "  make planning       [Phase 3+] Run MDP, HTN, and PDDL (pyperplan) pipeline"
 	@echo "  make all            [Phase 3+] Run full reproducible pipeline"
 	@echo "  make clean          Remove caches and temporary build artifacts"
@@ -52,6 +53,9 @@ stage2:
 
 stage3:
 	$(BIN)/python -m src.optimise.run --config $(CONFIG)
+
+mdp:
+	$(BIN)/python -m src.planning.mdp --config $(CONFIG)
 
 planning:
 	$(BIN)/python -m src.planning.run --config $(CONFIG)

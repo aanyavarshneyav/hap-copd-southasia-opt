@@ -21,11 +21,12 @@ import pandas as pd
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
-from matplotlib.patches import Patch
+from matplotlib.patches import FancyBboxPatch, Patch
 
 from src.optimise.baselines import BaselineResult
 from src.optimise.evaluator import EvaluationResult, Stage3Evaluator
 from src.optimise.nsga2 import MultiSeedResult, SingleSeedResult, decode_allocation_spend
+from src.planning.htn import HTNNode
 
 # Colorblind-safe Okabe-Ito palette
 _PLAN_STYLE: dict[str, dict[str, Any]] = {
@@ -558,5 +559,216 @@ def plot_baseline_comparison(
         y=0.99,
     )
     fig.tight_layout(rect=[0.0, 0.02, 1.0, 0.94])
+    _apply_mock_watermark(fig, is_mock, data_version)
+    return _save_figure(fig, out_path)
+
+
+def plot_mdp_policy_and_sensitivity(
+    sensitivity_df: pd.DataFrame,
+    rollouts_df: pd.DataFrame,
+    chosen_lambda: float,
+    chosen_gamma: float,
+    out_path: Path,
+    *,
+    is_mock: bool,
+    data_version: str,
+) -> Path:
+    """Plot MDP lambda/discount sensitivity and N-rollout stochastic outcome distribution."""
+    _configure_style()
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13.4, 5.2))
+
+    gamma_colors = {0.774: "#0072B2", 1.0: "#D55E00"}
+    ax1_r = ax1.twinx()
+    ax1_r.spines["top"].set_visible(False)
+
+    for gamma_val, sub in sensitivity_df.groupby("discount_factor"):
+        sub_s = sub.sort_values("cost_weight_lambda")
+        col = gamma_colors.get(round(float(gamma_val), 3), "#009E73")
+        lams = sub_s["cost_weight_lambda"].to_numpy(dtype=float)
+        da_m = sub_s["mean_dalys_averted"].to_numpy(dtype=float) / 1e6
+        cost_m = sub_s["mean_cost_usd_millions"].to_numpy(dtype=float)
+        ax1.plot(
+            lams,
+            da_m,
+            marker="o",
+            linewidth=2.1,
+            color=col,
+            label=f"DALYs averted (γ={gamma_val:.3f})",
+        )
+        ax1_r.plot(
+            lams,
+            cost_m,
+            marker="s",
+            linestyle="--",
+            linewidth=1.5,
+            alpha=0.8,
+            color=col,
+            label=f"Cost $M (γ={gamma_val:.3f})",
+        )
+
+    ax1.axvline(
+        chosen_lambda,
+        color="#374151",
+        linestyle=":",
+        linewidth=1.6,
+        label=f"Calibrated λ={chosen_lambda:.0f}",
+    )
+    ax1.set_xlabel("Cost Penalty Weight λ (DALYs per USD million)")
+    ax1.set_ylabel("Mean 2040 DALYs Averted (millions)")
+    ax1_r.set_ylabel("Mean Programme Cost (USD millions)")
+    ax1.set_title("A. MDP Policy Sensitivity to λ and Discount Factor γ")
+
+    h1, l1 = ax1.get_legend_handles_labels()
+    h2, l2 = ax1_r.get_legend_handles_labels()
+    ax1.legend(h1 + h2, l1 + l2, loc="upper right", fontsize=7.8, frameon=True, framealpha=0.92)
+
+    # Panel B: Stochastic rollout distribution at calibrated (lambda, gamma)
+    averted_m = rollouts_df["dalys_averted_mean"].to_numpy(dtype=float) / 1e6
+    costs = rollouts_df["total_cost_usd_millions"].to_numpy(dtype=float)
+    mean_da = float(np.mean(averted_m))
+    q_lo, q_hi = np.percentile(averted_m, [2.5, 97.5])
+    mean_cost = float(np.mean(costs))
+
+    ax2.hist(averted_m, bins=24, color="#009E73", alpha=0.78, edgecolor="white")
+    ax2.axvline(mean_da, color="#111827", linewidth=2.0, label=f"Mean={mean_da:.3f}M")
+    ax2.axvline(
+        q_lo,
+        color="#D55E00",
+        linestyle="--",
+        linewidth=1.4,
+        label=f"95% range [{q_lo:.3f}, {q_hi:.3f}]M",
+    )
+    ax2.axvline(q_hi, color="#D55E00", linestyle="--", linewidth=1.4)
+    ax2.set_xlabel("Realized 2040 DALYs Averted (millions)")
+    ax2.set_ylabel("Simulated Rollouts (count)")
+    ax2.set_title(
+        f"B. Stochastic Rollouts (N={len(rollouts_df)}, λ={chosen_lambda:.0f}, "
+        f"γ={chosen_gamma:.3f}, Mean Cost=${mean_cost:.1f}M)"
+    )
+    ax2.legend(loc="upper left", frameon=True, framealpha=0.92)
+
+    title_prefix = "[SYNTHETIC MOCK] " if is_mock else ""
+    fig.suptitle(
+        f"{title_prefix}Stage 4 Custom NumPy MDP: Sensitivity & Stochastic Rollout Outcomes",
+        fontsize=12.5,
+        fontweight="bold",
+        y=0.99,
+    )
+    fig.tight_layout(rect=[0.0, 0.02, 1.0, 0.94])
+    _apply_mock_watermark(fig, is_mock, data_version)
+    return _save_figure(fig, out_path)
+
+
+def plot_htn_tree(
+    root: HTNNode,
+    evaluation: EvaluationResult,
+    out_path: Path,
+    *,
+    is_mock: bool,
+    data_version: str,
+) -> Path:
+    """Render the plain-Python HTN decomposition tree with mapped leaf actions."""
+    _configure_style()
+
+    # Assign vertical coordinates via post-order traversal
+    leaf_counter = 0
+    coords: dict[int, tuple[float, float, int]] = {}
+    edges: list[tuple[int, int]] = []
+
+    def _assign(node: HTNNode, depth: int) -> float:
+        nonlocal leaf_counter
+        if not node.children:
+            y = float(leaf_counter)
+            leaf_counter += 1
+            coords[id(node)] = (float(depth), y, depth)
+            return y
+        child_ys = [_assign(ch, depth + 1) for ch in node.children]
+        for ch in node.children:
+            edges.append((id(node), id(ch)))
+        y_mid = float(np.mean(child_ys))
+        coords[id(node)] = (float(depth), y_mid, depth)
+        return y_mid
+
+    _assign(root, 0)
+    max_depth = max(c[2] for c in coords.values())
+    n_slots = max(leaf_counter, 1)
+
+    fig_h = max(7.5, 0.52 * n_slots)
+    fig, ax = plt.subplots(figsize=(15.0, fig_h))
+    ax.axis("off")
+
+    nodes_by_id: dict[int, HTNNode] = {}
+
+    def _collect(node: HTNNode) -> None:
+        nodes_by_id[id(node)] = node
+        for ch in node.children:
+            _collect(ch)
+
+    _collect(root)
+
+    for parent_id, child_id in edges:
+        px, py, _ = coords[parent_id]
+        cx, cy, _ = coords[child_id]
+        ax.plot([px + 0.18, cx - 0.18], [py, cy], color="#9CA3AF", linewidth=1.1, zorder=1)
+
+    for nid, (x, y, _) in coords.items():
+        node = nodes_by_id[nid]
+        if node.node_type == "primitive":
+            face = _INTERVENTION_COLORS.get(node.intervention or "", "#0072B2")
+            edge = "#111827"
+            txt_color = "white"
+            label = (
+                f"{node.unit} | {node.period} | {node.intervention}\n"
+                f"x={node.allocation_value:.2f}, ${node.cost_usd_millions:.1f}M"
+            )
+            box_w, box_h = 0.88, 0.68
+        else:
+            face = "#EFF6FF" if node.method else "#F3F4F6"
+            edge = "#1D4ED8" if node.method else "#6B7280"
+            txt_color = "#111827"
+            short_name = node.name.replace(
+                "AchieveSouthAsiaCleanCookingPlan", "Goal: SouthAsiaPlan"
+            ).replace("VerifyBudgetAndEquityGuard(", "VerifyGuard(\n")
+            label = f"{short_name}" + (f"\n[{node.method}]" if node.method else "")
+            box_w, box_h = 0.78, 0.64
+
+        patch = FancyBboxPatch(
+            (x - box_w / 2.0, y - box_h / 2.0),
+            box_w,
+            box_h,
+            boxstyle="round,pad=0.06,rounding_size=0.08",
+            facecolor=face,
+            edgecolor=edge,
+            linewidth=1.0,
+            zorder=3,
+        )
+        ax.add_patch(patch)
+        ax.text(
+            x,
+            y,
+            label,
+            ha="center",
+            va="center",
+            fontsize=7.3,
+            color=txt_color,
+            fontweight="bold" if node.node_type == "primitive" else "normal",
+            zorder=4,
+        )
+
+    ax.set_xlim(-0.6, float(max_depth) + 0.7)
+    ax.set_ylim(-0.8, float(n_slots) - 0.2)
+    ax.invert_yaxis()
+
+    title_prefix = "[SYNTHETIC MOCK] " if is_mock else ""
+    fig.suptitle(
+        f"{title_prefix}HTN Decomposition Tree | "
+        f"Cost=${float(evaluation.total_cost_usd_millions):.1f}M | "
+        f"2040 DALYs={float(evaluation.dalys_2040_mean) / 1e6:.2f}M | "
+        f"Feasible={evaluation.is_feasible}",
+        fontsize=12.0,
+        fontweight="bold",
+        y=0.99,
+    )
+    fig.tight_layout(rect=[0.0, 0.02, 1.0, 0.96])
     _apply_mock_watermark(fig, is_mock, data_version)
     return _save_figure(fig, out_path)
