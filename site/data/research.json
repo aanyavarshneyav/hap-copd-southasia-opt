@@ -1,0 +1,351 @@
+{
+  "methodology_stages": [
+    {
+      "stage": "Stage 0",
+      "name": "Ingestion, Validation & Apportionment",
+      "owner": "Person A (Rudraksh)",
+      "status": "Auxiliary inputs acquired (WPP/WUP/WHO/DHS); GBD raw pending",
+      "inputs": "GBD 2023 CSVs, UN WPP 2024, UN WUP 2025, WHO SDG 7.1.2",
+      "outputs": "data/interim/*.parquet, baseline_unit_state.csv"
+    },
+    {
+      "stage": "Stage 1",
+      "name": "Historical Burden & Trend Analysis (1990\u20132023)",
+      "owner": "Person A (Rudraksh)",
+      "status": "Pending GBD 2023 exports (clean-cooking trends ready)",
+      "inputs": "GBD 2023 HAP-COPD, Total COPD, All-cause HAP",
+      "outputs": "s1_historical_summary.csv, s1_eapc_joinpoint.csv, s1_*.png"
+    },
+    {
+      "stage": "Stage 2",
+      "name": "Statistical & ML Forecasting (2024\u20132040)",
+      "owner": "Person A (Rudraksh)",
+      "status": "Pending Stage 2 exports (mock Contracts 1\u20133 active)",
+      "inputs": "5-country panel (1990\u20132023), WHO SDG 7.1.2, UN WPP 2024",
+      "outputs": "s2_rolling_cv_metrics.csv, forecasts_stage3.csv, exposure_response_surrogate.json"
+    },
+    {
+      "stage": "Stage 3",
+      "name": "Multi-Objective Optimisation (NSGA-II)",
+      "owner": "Person B (Aanya)",
+      "status": "Complete & tested on MOCK_V1",
+      "inputs": "Contracts 1\u20134 (forecasts, baseline state, surrogate, intervention params)",
+      "outputs": "s3_pareto_front{_mock}.csv, s3_selected_plans{_mock}.csv, s3_*.png"
+    },
+    {
+      "stage": "Stage 4",
+      "name": "Sequential & Symbolic Planning (MDP, HTN, PDDL)",
+      "owner": "Person B (Aanya)",
+      "status": "Complete & tested on MOCK_V1",
+      "inputs": "Contracts 1\u20134, Stage 3 Pareto reference, pddl/*.pddl",
+      "outputs": "plan_mdp_*, plan_htn_trace*, plan_pddl_solution*, comp_ga_vs_mdp*"
+    }
+  ],
+  "data_sources": [
+    {
+      "name": "IHME Global Burden of Disease (GBD) 2023",
+      "role": "Historical HAP-attributable COPD, total COPD, and HAP all-causes (1990\u20132023)",
+      "countries": "India, Nepal, Pakistan, Bangladesh, Bhutan",
+      "status": "Pending download (interactive GHDx login required; A-03)",
+      "url": "https://vizhub.healthdata.org/gbd-results/"
+    },
+    {
+      "name": "UN World Population Prospects (WPP) 2024",
+      "role": "Population by 5-year age group and sex (1990\u20132040 Medium variant)",
+      "countries": "Global (verified India & Nepal; PAK/BGD/BTN available in archive)",
+      "status": "Acquired & SHA-256 verified in b/param-sourcing",
+      "url": "https://population.un.org/wpp/Download/Standard/CSV/"
+    },
+    {
+      "name": "UN World Urbanization Prospects (WUP) 2025",
+      "role": "Urban vs rural population (1950\u20132050) under National Definitions and DEGURBA Level 1",
+      "countries": "India, Nepal (plus global archive)",
+      "status": "Acquired & SHA-256 verified in b/param-sourcing",
+      "url": "https://population.un.org/wup/"
+    },
+    {
+      "name": "WHO Global Health Observatory (SDG 7.1.2)",
+      "role": "Primary reliance on clean fuels/tech (2000\u20132024, people) & fuel categories (1990\u20132023)",
+      "countries": "India, Nepal (total, urban, rural)",
+      "status": "Acquired & verified in b/param-sourcing",
+      "url": "https://www.who.int/data/gho/data/themes/air-pollution/household-air-pollution"
+    },
+    {
+      "name": "World Bank WDI (WHO/ESMAP SDG 7.1.2)",
+      "role": "Cross-check of clean cooking access (EG.CFT.ACCS.*, 2000\u20132024; 0.0 pct pt diff vs WHO)",
+      "countries": "India, Nepal (total, urban, rural)",
+      "status": "Acquired & verified in b/param-sourcing",
+      "url": "https://data.worldbank.org/indicator/EG.CFT.ACCS.ZS"
+    },
+    {
+      "name": "India NFHS-5 (2019\u201321) & NFHS-1..4 via DHS Program API",
+      "role": "Observed household size (4.2 urban / 4.5 rural) & HH vs pop clean-fuel access (89.7% / 43.2% HH)",
+      "countries": "India (urban, rural)",
+      "status": "Acquired & verified in b/param-sourcing",
+      "url": "https://api.dhsprogram.com/"
+    },
+    {
+      "name": "Nepal NDHS 2022 & NDHS 2001\u20132016 via DHS Program API",
+      "role": "De jure household size (3.9 / 4.0) & HH vs pop clean-fuel access (56.7% / 21.2% HH)",
+      "countries": "Nepal (urban, rural)",
+      "status": "Acquired & verified in b/param-sourcing",
+      "url": "https://api.dhsprogram.com/"
+    },
+    {
+      "name": "Nepal National Population & Housing Census (NPHC) 2021",
+      "role": "Official municipal pop/HH counts (4.3076 urban / 4.5115 rural) & Table 07 cooking fuels",
+      "countries": "Nepal (293 Urban & 460 Rural Municipalities)",
+      "status": "Acquired & verified in b/param-sourcing",
+      "url": "https://censusnepal.cbs.gov.np/"
+    },
+    {
+      "name": "Census of India 2011 (Table A-1)",
+      "role": "2011 baseline pop & households (377.1M / 80.9M urban; 833.7M / 168.6M rural); 2021 census delayed",
+      "countries": "India (urban, rural, total)",
+      "status": "Acquired & verified in b/param-sourcing",
+      "url": "https://censusindia.gov.in/"
+    },
+    {
+      "name": "Intervention Programme & Clinical Literature",
+      "role": "PMUY (MoPNG/PIB), Nepal NOC, MNRE/AEPC, EESL NECP, HAPIN trial, Tielsch et al. 2016, Pope et al. 2017, CEEW, ESMAP/MECS",
+      "countries": "India & Nepal",
+      "status": "Sourced/derived in intervention_source_register.csv (infra capex unresolved)",
+      "url": "https://pib.gov.in"
+    }
+  ],
+  "limitations": [
+    {
+      "id": "LIM-01",
+      "title": "GBD 2023 Values Are Modelled Estimates",
+      "detail": "IHME GBD 2023 deaths, DALYs, and ASRs are modelled epidemiological estimates rather than directly observed vital registration counts; all forecasts and Pareto evaluations must carry uncertainty intervals (lower, val, upper)."
+    },
+    {
+      "id": "LIM-02",
+      "title": "All-Age Burden Rather Than 5-Year Age-Specific Trajectories",
+      "detail": "The final repository compromise uses aggregated all-age burden counts and age-standardized rates (ASRs) rather than five-year age-specific HAP-COPD burden trajectories."
+    },
+    {
+      "id": "LIM-03",
+      "title": "Adapted Poisson Rate GLM Instead of Full APC Decomposition",
+      "detail": "Consistent with aggregated all-age burden, the adapted Poisson GLM models aggregated rates with a log-population offset rather than full Age-Period-Cohort (APC) identifiability decomposition."
+    },
+    {
+      "id": "LIM-04",
+      "title": "Proxy Sex-Specific Burden Projection",
+      "detail": "Clean-cooking rollout programmes rarely disaggregate adoption by sex. Stage 3 and MDP model sex equity via a proxy female-to-male exposure elasticity ratio (sex_elasticity_ratio_f_to_m) applied to the shared unit coverage increment."
+    },
+    {
+      "id": "LIM-05",
+      "title": "Uncertainty in Intervention Effectiveness & Fuel Stacking",
+      "detail": "Field cookstove trials show substantial fuel stacking and non-linear GBD exposure\u2013response concavity: raw 32\u201350% PM2.5 reductions for improved biomass translate to much smaller COPD PAF gains (~0.15\u20130.30). Real-world uptake also varies stochastically."
+    },
+    {
+      "id": "LIM-06",
+      "title": "Household vs. Population Coverage Denominator Bridging",
+      "detail": "WHO SDG 7.1.2 is population-denominated (people) whereas surveys (NFHS-5, NPHC 2021) and programme subsidies target households. Observed HH coverage exceeds population coverage by +0.7 to +4.2 pct pts because larger households disproportionately use solid fuels; Stage 3 links them via coverage_bridge_factor (central 1.0, tested 0.8\u20131.2)."
+    },
+    {
+      "id": "LIM-07",
+      "title": "Intervention Costing Boundaries & Unresolved Infrastructure Capex",
+      "detail": "PMUY LPG reflects public-fiscal subsidy, whereas improved biomass and induction benchmarks initially reflect hardware/O&M or lack central cash subsidies. Regional rural feeder/transformer + LPG depot capex (infra_lpg_grid) and pooled 2-country budgets remain unresolved gaps (null) and are never invented."
+    },
+    {
+      "id": "LIM-08",
+      "title": "Forecasting Structural Continuity & Scenario Framing",
+      "detail": "Stage 2 statistical/ML forecasts assume historical associations persist (with clean-fuel access as the primary driver) and cannot establish causal policy impact. All optimisation and planning outputs are exploratory scenario analyses\u2014never real-world policy prescriptions."
+    }
+  ],
+  "reproducibility": {
+    "python_requirement": ">=3.12,<3.13 (venv + pyproject.toml; no conda, uv, or R)",
+    "dependencies": [
+      "matplotlib>=3.9,<4.0",
+      "numpy>=1.26,<3.0",
+      "pandas>=2.2,<3.0",
+      "pwlf>=2.2,<3.0",
+      "pymoo>=0.6,<0.7",
+      "pyperplan>=2.1,<3.0",
+      "pyyaml>=6.0,<7.0",
+      "scikit-learn>=1.5,<2.0",
+      "scipy>=1.13,<2.0",
+      "seaborn>=0.13,<0.14",
+      "statsmodels>=0.14,<0.15"
+    ],
+    "seeds": {
+      "global": 42,
+      "numpy": 42,
+      "sklearn": 42,
+      "pymoo": 42,
+      "mdp": 42
+    },
+    "commands": [
+      {
+        "cmd": "make setup",
+        "desc": "Create Python 3.12 .venv and install package + dev tools"
+      },
+      {
+        "cmd": "make check",
+        "desc": "Run ruff lint/format checks and pytest unit/contract suite"
+      },
+      {
+        "cmd": "make stage3",
+        "desc": "Run NSGA-II (5 seeds), baselines, and Stage 3 figures/tables"
+      },
+      {
+        "cmd": "make planning",
+        "desc": "Run MDP value iteration, HTN decomposition, and PDDL (pyperplan)"
+      },
+      {
+        "cmd": "make compare",
+        "desc": "Run 1,000-rollout equal-footing GA vs MDP vs PDDL comparison"
+      },
+      {
+        "cmd": "python3 site/scripts/prepare_data.py",
+        "desc": "Regenerate site/data/*.json and site/downloads/* (read-only on repo)"
+      },
+      {
+        "cmd": "python3 -m http.server 8080 --directory site",
+        "desc": "Launch static research platform locally at http://localhost:8080"
+      }
+    ],
+    "verified_status": {
+      "pytest": "37 passed in test suite (verified on current branch)",
+      "ruff_lint": "ruff check src tests: All checks passed",
+      "ruff_format": "25/26 files formatted (1 pre-existing uncommitted diff in src/optimise/evaluator.py left untouched)"
+    }
+  },
+  "downloads": [
+    {
+      "filename": "s3_pareto_front_mock.csv",
+      "href": "downloads/s3_pareto_front_mock.csv",
+      "label": "Stage 3 Pareto Front (219 solutions, MOCK_V1)",
+      "format": "CSV",
+      "size_kb": "209.8 KB"
+    },
+    {
+      "filename": "s3_selected_plans_mock.csv",
+      "href": "downloads/s3_selected_plans_mock.csv",
+      "label": "Selected Representative Plans (MOCK_V1)",
+      "format": "CSV",
+      "size_kb": "5.6 KB"
+    },
+    {
+      "filename": "s3_baseline_comparison_mock.csv",
+      "href": "downloads/s3_baseline_comparison_mock.csv",
+      "label": "NSGA-II vs Baseline Heuristics (MOCK_V1)",
+      "format": "CSV",
+      "size_kb": "1.6 KB"
+    },
+    {
+      "filename": "comp_ga_vs_mdp_mock.csv",
+      "href": "downloads/comp_ga_vs_mdp_mock.csv",
+      "label": "Equal-Footing GA vs MDP vs PDDL Comparison (MOCK_V1)",
+      "format": "CSV",
+      "size_kb": "4.7 KB"
+    },
+    {
+      "filename": "plan_htn_trace_mock.json",
+      "href": "downloads/plan_htn_trace_mock.json",
+      "label": "HTN Decomposition Trace (MOCK_V1)",
+      "format": "JSON",
+      "size_kb": "10.9 KB"
+    },
+    {
+      "filename": "plan_pddl_solution_mock.txt",
+      "href": "downloads/plan_pddl_solution_mock.txt",
+      "label": "STRIPS/PDDL Verified Plan Solution (MOCK_V1)",
+      "format": "TXT",
+      "size_kb": "0.8 KB"
+    },
+    {
+      "filename": "domain.pddl",
+      "href": "downloads/domain.pddl",
+      "label": "PDDL Domain Definition (south-asia-clean-cooking)",
+      "format": "PDDL",
+      "size_kb": "5.1 KB"
+    },
+    {
+      "filename": "problem_ind_npl.pddl",
+      "href": "downloads/problem_ind_npl.pddl",
+      "label": "PDDL Problem Instance (IND & NPL)",
+      "format": "PDDL",
+      "size_kb": "1.9 KB"
+    },
+    {
+      "filename": "default.yaml",
+      "href": "downloads/default.yaml",
+      "label": "Project Configuration (configs/default.yaml)",
+      "format": "YAML",
+      "size_kb": "3.6 KB"
+    },
+    {
+      "filename": "METHODOLOGY.md",
+      "href": "downloads/METHODOLOGY.md",
+      "label": "Methodology Specification",
+      "format": "Markdown",
+      "size_kb": "9.6 KB"
+    },
+    {
+      "filename": "INTERFACES.md",
+      "href": "downloads/INTERFACES.md",
+      "label": "Track Interfaces & Data Contracts",
+      "format": "Markdown",
+      "size_kb": "11.3 KB"
+    },
+    {
+      "filename": "ASSUMPTIONS.md",
+      "href": "downloads/ASSUMPTIONS.md",
+      "label": "Scenario Assumptions Register",
+      "format": "Markdown",
+      "size_kb": "6.3 KB"
+    },
+    {
+      "filename": "PLANNING_SPEC.md",
+      "href": "downloads/PLANNING_SPEC.md",
+      "label": "Planning Component Specification",
+      "format": "Markdown",
+      "size_kb": "10.1 KB"
+    },
+    {
+      "filename": "DECISIONS.md",
+      "href": "downloads/DECISIONS.md",
+      "label": "Project Decision Log",
+      "format": "Markdown",
+      "size_kb": "9.3 KB"
+    },
+    {
+      "filename": "clean_fuel_access.csv",
+      "href": "downloads/clean_fuel_access.csv",
+      "label": "Real WHO/WB/DHS/NPHC Clean-Cooking Access (1990\u20132024)",
+      "format": "CSV",
+      "size_kb": "455.7 KB"
+    },
+    {
+      "filename": "demographic_inputs.csv",
+      "href": "downloads/demographic_inputs.csv",
+      "label": "Real UN WPP/WUP & Census/DHS Demographics",
+      "format": "CSV",
+      "size_kb": "13.3 KB"
+    },
+    {
+      "filename": "intervention_source_register.csv",
+      "href": "downloads/intervention_source_register.csv",
+      "label": "Sourced Intervention Cost & Effectiveness Register",
+      "format": "CSV",
+      "size_kb": "9.9 KB"
+    },
+    {
+      "filename": "b09_baseline_comparison.csv",
+      "href": "downloads/b09_baseline_comparison.csv",
+      "label": "Population vs Household Coverage Baselines",
+      "format": "CSV",
+      "size_kb": "1.1 KB"
+    },
+    {
+      "filename": "b09_budget_scenarios.csv",
+      "href": "downloads/b09_budget_scenarios.csv",
+      "label": "Reconciled Fiscal Budget Scenarios",
+      "format": "CSV",
+      "size_kb": "2.2 KB"
+    }
+  ]
+}

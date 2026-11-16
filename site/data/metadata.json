@@ -1,0 +1,38 @@
+{
+  "project_name": "hap-copd-southasia-opt",
+  "version": "0.1.0",
+  "generated_at": "2026-11-16T20:36:44Z",
+  "use_mock_forecasts": true,
+  "pipeline_status": {
+    "stage0_ingestion": {
+      "status": "partial_inputs_acquired",
+      "label": "Auxiliary Inputs Acquired / GBD Pending",
+      "detail": "UN WPP 2024, UN WUP 2025, WHO GHO SDG 7.1.2, World Bank WDI, DHS/NFHS, and Nepal NPHC 2021 acquired in b/param-sourcing; IHME GBD 2023 raw exports pending (A-03)."
+    },
+    "stage1_historical": {
+      "status": "pending_gbd",
+      "label": "Pending GBD 2023 Data",
+      "detail": "src/historical/ awaiting GBD 2023 HAP-COPD, Total COPD, and All-Cause HAP CSV exports; real clean-cooking access series (1990\u20132024) are available and displayed."
+    },
+    "stage2_forecast": {
+      "status": "pending_stage2",
+      "label": "Pending Stage 2 Exports",
+      "detail": "src/forecast/ awaiting validated Stage 2 rolling-origin CV and 2040 projections; Contract 1/2/3 synthetic mock explorer (MOCK_V1) is active."
+    },
+    "stage3_optimise": {
+      "status": "complete_mock",
+      "label": "Complete on Mock Data (MOCK_V1)",
+      "detail": "NSGA-II (pymoo), Stage3Repair, baselines, and budget/parameter sweeps verified and running on MOCK_V1."
+    },
+    "stage4_planning": {
+      "status": "complete_mock",
+      "label": "Complete on Mock Data (MOCK_V1)",
+      "detail": "Custom NumPy MDP, HTN tree, STRIPS/PDDL (pyperplan), and 1,000-rollout GA vs MDP vs PDDL comparison verified on MOCK_V1."
+    },
+    "param_sourcing": {
+      "status": "partial_real",
+      "label": "Sourced & Derived (2 Gaps Unresolved)",
+      "detail": "Costs/effectiveness sourced & derived on b/param-sourcing; infra_lpg_grid fixed capex and pooled total_budget_usd_millions remain unresolved (null)."
+    }
+  }
+}
