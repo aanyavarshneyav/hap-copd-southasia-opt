@@ -1,4 +1,4 @@
-.PHONY: help setup lint format test check validate-data stage1 stage2 stage3 planning all clean
+.PHONY: help setup lint format test check mock-data validate-data stage1 stage2 stage3 planning all clean
 
 PYTHON := python3.12
 VENV := .venv
@@ -12,6 +12,7 @@ help:
 	@echo "  make format         Auto-format src/ and tests/ with ruff"
 	@echo "  make test           Run pytest suite"
 	@echo "  make check          Run lint + test"
+	@echo "  make mock-data      [Phase 1+] Generate deterministic synthetic *_mock.* fixtures"
 	@echo "  make validate-data  [Phase 1+] Validate raw datasets against DATA_SPEC.md"
 	@echo "  make stage1         [Phase 1+] Run Stage 1 historical analysis"
 	@echo "  make stage2         [Phase 2+] Run Stage 2 forecasting & CV"
@@ -36,6 +37,9 @@ test:
 	$(BIN)/pytest
 
 check: lint test
+
+mock-data:
+	$(BIN)/python -m src.data.mock --config $(CONFIG)
 
 validate-data:
 	$(BIN)/python -m src.data.validate --config $(CONFIG)

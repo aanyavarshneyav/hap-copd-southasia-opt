@@ -1,0 +1,96 @@
+{
+  "schema_version": "1.0",
+  "is_mock": false,
+  "data_version": "TODO(owner)",
+  "generated_at": null,
+  "note": "Unfilled production template. Populate only from verified sources logged in docs/ASSUMPTIONS.md (ASM-05..ASM-16).",
+  "total_budget_usd_millions": null,
+  "infra_build_threshold": 0.5,
+  "apply_cost_discounting": false,
+  "discount_factor": 0.774,
+  "period_order": ["P1", "P2", "P3"],
+  "coverage_ceiling": {
+    "IND_urban": null,
+    "IND_rural": null,
+    "NPL_urban": null,
+    "NPL_rural": null
+  },
+  "effectiveness": {
+    "IND_urban": {
+      "lpg_subsidy": 1.0,
+      "improved_biomass": null,
+      "electric_induction": 1.0,
+      "infra_lpg_grid": 0.0
+    },
+    "IND_rural": {
+      "lpg_subsidy": 1.0,
+      "improved_biomass": null,
+      "electric_induction": 1.0,
+      "infra_lpg_grid": 0.0
+    },
+    "NPL_urban": {
+      "lpg_subsidy": 1.0,
+      "improved_biomass": null,
+      "electric_induction": 1.0,
+      "infra_lpg_grid": 0.0
+    },
+    "NPL_rural": {
+      "lpg_subsidy": 1.0,
+      "improved_biomass": null,
+      "electric_induction": 1.0,
+      "infra_lpg_grid": 0.0
+    }
+  },
+  "unit_costs_usd_millions": {
+    "IND_urban": {
+      "lpg_subsidy": null,
+      "improved_biomass": null,
+      "electric_induction": null,
+      "infra_lpg_grid": null
+    },
+    "IND_rural": {
+      "lpg_subsidy": null,
+      "improved_biomass": null,
+      "electric_induction": null,
+      "infra_lpg_grid": null
+    },
+    "NPL_urban": {
+      "lpg_subsidy": null,
+      "improved_biomass": null,
+      "electric_induction": null,
+      "infra_lpg_grid": null
+    },
+    "NPL_rural": {
+      "lpg_subsidy": null,
+      "improved_biomass": null,
+      "electric_induction": null,
+      "infra_lpg_grid": null
+    }
+  },
+  "max_adoption_per_period": {
+    "IND_urban": {
+      "lpg_subsidy": {"P1": null, "P2": null, "P3": null},
+      "improved_biomass": {"P1": null, "P2": null, "P3": null},
+      "electric_induction": {"P1": null, "P2": null, "P3": null},
+      "infra_lpg_grid": {"P1": 1.0, "P2": 1.0, "P3": 1.0}
+    },
+    "IND_rural": {
+      "lpg_subsidy": {"P1": null, "P2": null, "P3": null},
+      "improved_biomass": {"P1": null, "P2": null, "P3": null},
+      "electric_induction": {"P1": null, "P2": null, "P3": null},
+      "infra_lpg_grid": {"P1": 1.0, "P2": 1.0, "P3": 1.0}
+    },
+    "NPL_urban": {
+      "lpg_subsidy": {"P1": null, "P2": null, "P3": null},
+      "improved_biomass": {"P1": null, "P2": null, "P3": null},
+      "electric_induction": {"P1": null, "P2": null, "P3": null},
+      "infra_lpg_grid": {"P1": 1.0, "P2": 1.0, "P3": 1.0}
+    },
+    "NPL_rural": {
+      "lpg_subsidy": {"P1": null, "P2": null, "P3": null},
+      "improved_biomass": {"P1": null, "P2": null, "P3": null},
+      "electric_induction": {"P1": null, "P2": null, "P3": null},
+      "infra_lpg_grid": {"P1": 1.0, "P2": 1.0, "P3": 1.0}
+    }
+  }
+}

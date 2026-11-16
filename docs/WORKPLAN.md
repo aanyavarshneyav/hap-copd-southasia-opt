@@ -28,15 +28,15 @@
 | --- | --- | --- | --- | --- | --- |
 | `P0-01` | Phase 0 repository & documentation scaffolding | Setup | — | `AGENTS.md`, `docs/*.md`, `pyproject.toml` | `done` |
 | `A-01` | Lock Python 3.12 `.venv` (`make setup`) & smoke-test `configs/default.yaml` loader | Rudraksh (A) | `P0-01` | `src/data/config.py`, `tests/test_config.py` | `todo` |
-| `B-00` | **First-Hour Priority:** Build `*_mock.*` fixtures matching `INTERFACES.md` (with `A-02` schema validator alongside/paired with Rudraksh) | Aanya (B) *(or paired w/ Rudraksh)* | `P0-01` | `data/processed/*_mock.*` | `todo` |
-| `A-02` | Implement reusable contract schema validator (`src/data/contracts.py`) verifying mock & real parity | Rudraksh (A) | `A-01`, `B-00` | `src/data/contracts.py`, `tests/data/test_contracts.py` | `todo` |
+| `B-00` | **First-Hour Priority:** Build `*_mock.*` fixtures matching `INTERFACES.md` (with `A-02` schema validator alongside/paired with Rudraksh) | Aanya (B) *(or paired w/ Rudraksh)* | `P0-01` | `data/processed/*_mock.*` | `done` |
+| `A-02` | Implement reusable contract schema validator (`src/data/contracts.py`) verifying mock & real parity | Rudraksh (A) *(Phase 1 impl by B)* | `A-01`, `B-00` | `src/data/contracts.py`, `tests/data/test_contracts.py` | `done` |
 | `A-03` | Download GBD 2023 (HAP-COPD, Total COPD, All-cause HAP), UN WPP 2024, WHO SDG 7.1.2 & log `manifest.json` | Rudraksh (A) | `P0-01` | `data/raw/*.csv`, `data/raw/manifest.json` | `todo` |
 | `A-04` | Build ingestion, `validate-data`, and urban/rural apportionment pipeline (`ASM-01`) | Rudraksh (A) | `A-03` | `src/data/ingest.py`, `src/data/validate.py`, `data/interim/*.parquet` | `todo` |
 | `A-05` | Stage 1 historical analysis: ASRs, EAPC, `pwlf` joinpoint, shares, heatmaps | Rudraksh (A) | `A-04` | `src/historical/run.py`, `outputs/tables/s1_*.csv`, `outputs/figures/s1_*.png` | `todo` |
 | `A-06` | Stage 2 models (ARIMA, ETS, Poisson GLM APC, RF/HistGBDT) & rolling-origin CV | Rudraksh (A) | `A-04` | `src/forecast/models.py`, `src/forecast/cv.py`, `outputs/tables/s2_rolling_cv_metrics.csv` | `todo` |
 | `A-07` | Export 2024–2040 forecasts with UI propagation, `forecasts_stage3.csv`, and `exposure_response_surrogate.json` | Rudraksh (A) | `A-06`, `A-02` | `data/processed/forecasts_stage3.csv`, `data/processed/exposure_response_surrogate.json` | `todo` |
 | `A-08` | Re-evaluate top Pareto points from Stage 3 on full Stage 2 uncertainty draws | Rudraksh (A) | `A-07`, `B-02` | `outputs/tables/s3_pareto_reeval.csv` | `todo` |
-| `B-01` | Build contract reader + fast surrogate objective/constraint evaluator against `*_mock.*` | Aanya (B) | `B-00` | `src/optimise/evaluator.py`, `tests/optimise/test_evaluator.py` | `todo` |
+| `B-01` | Build contract reader + fast surrogate objective/constraint evaluator against `*_mock.*` | Aanya (B) | `B-00` | `src/optimise/evaluator.py`, `tests/optimise/test_evaluator.py` | `done` |
 | `B-02` | Implement NSGA-II (`pymoo`) problem with budget, adoption & infra constraints | Aanya (B) | `B-01` | `src/optimise/nsga2.py`, `src/optimise/run.py` | `todo` |
 | `B-03` | Implement custom NumPy MDP value iteration / backward induction (`src/planning/mdp.py`) | Aanya (B) | `B-01` | `src/planning/mdp.py`, `tests/planning/test_mdp.py` | `todo` |
 | `B-04` | Implement plain-Python HTN decomposition tree & STRIPS/PDDL files (`pyperplan`) | Aanya (B) | `P0-01` | `src/planning/htn.py`, `pddl/*.pddl`, `src/planning/pddl_runner.py` | `todo` |

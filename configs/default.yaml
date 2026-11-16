@@ -31,6 +31,8 @@ interfaces:
   baseline_state_mock_file: "data/processed/baseline_unit_state_mock.csv"
   surrogate_file: "data/processed/exposure_response_surrogate.json"
   surrogate_mock_file: "data/processed/exposure_response_surrogate_mock.json"
+  intervention_params_file: "configs/intervention_params.json"
+  intervention_params_mock_file: "data/processed/intervention_params_mock.json"
 
 geography:
   forecast_panel_countries:
