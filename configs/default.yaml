@@ -87,6 +87,14 @@ stage3:
   algorithm: "NSGA2"
   population_size: 80
   n_generations: 100
+  seeds: [42, 43, 44, 45, 46]
+  crossover_prob: 0.9
+  crossover_eta: 15.0
+  mutation_eta: 20.0
+  eliminate_duplicates: true
+  use_repair: true
+  repair_budget: true
+  greedy_step_size: 0.05
   total_budget_usd_millions: null  # TODO(owner): anchor from docs/ASSUMPTIONS.md once sourced
   equity_metric: "abs_asr_gap_female_male"
   eval_mode: "surrogate"  # "surrogate" inside GA loop; re-evaluate Pareto front on full Stage 2
