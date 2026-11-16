@@ -10,6 +10,7 @@ config and contract files — never hard-coded.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -185,7 +186,14 @@ def _extract_bau_2040_arrays(
 class Stage3Evaluator:
     """Vectorized evaluator for 2040 DALYs, cost, equity gap, and constraints."""
 
-    def __init__(self, config: dict[str, Any], contracts: Stage3Contracts) -> None:
+    def __init__(
+        self,
+        config: dict[str, Any],
+        contracts: Stage3Contracts,
+        *,
+        baseline_clean_fuel_households: Mapping[str, float] | None = None,
+        coverage_bridge_factor: Mapping[str, float] | None = None,
+    ) -> None:
         self.units: list[str] = [str(u) for u in config["geography"]["allocation_units"]]
         self.interventions: list[str] = [str(i) for i in config["interventions"]]
         self.periods: list[str] = [str(p["id"]) for p in config["time"]["decision_periods"]]
@@ -216,8 +224,38 @@ class Stage3Evaluator:
             self._bau_dalys_up,
             self._bau_asr_val,
             self._pop_weights,
-            self._cf_bau_2040,
+            cf_bau_2040_pop,
         ) = _extract_bau_2040_arrays(contracts.forecasts_stage3, self.units)
+        self._baseline_clean_fuel_population: np.ndarray = cf_bau_2040_pop
+
+        params = contracts.intervention_params
+        hh_base_src = (
+            baseline_clean_fuel_households
+            if baseline_clean_fuel_households is not None
+            else params.get("baseline_clean_fuel_households")
+        )
+        if isinstance(hh_base_src, Mapping):
+            hh_base = np.array([float(hh_base_src[u]) for u in self.units], dtype=float)
+        else:
+            hh_base = cf_bau_2040_pop.copy()
+        if np.any(~np.isfinite(hh_base)) or np.any(hh_base < 0.0) or np.any(hh_base > 1.0):
+            raise ValueError("baseline_clean_fuel_households must be finite values in [0, 1].")
+        self._baseline_clean_fuel_households: np.ndarray = hh_base
+        # _cf_bau_2040 preserves the household baseline attribute referenced by audit helpers
+        self._cf_bau_2040: np.ndarray = self._baseline_clean_fuel_households
+
+        bridge_src = (
+            coverage_bridge_factor
+            if coverage_bridge_factor is not None
+            else params.get("coverage_bridge_factor")
+        )
+        if isinstance(bridge_src, Mapping):
+            bridge = np.array([float(bridge_src[u]) for u in self.units], dtype=float)
+        else:
+            bridge = np.ones(self.n_units, dtype=float)
+        if np.any(~np.isfinite(bridge)) or np.any(bridge <= 0.0):
+            raise ValueError("coverage_bridge_factor must contain finite values > 0.")
+        self._coverage_bridge_factor: np.ndarray = bridge
 
         # Initial infra flags from Contract 2
         baseline_indexed = contracts.baseline_unit_state.set_index("location")
@@ -245,7 +283,6 @@ class Stage3Evaluator:
         )
 
         # Intervention & constraint parameters from Contract 4
-        params = contracts.intervention_params
         self.total_budget_usd_millions = float(params["total_budget_usd_millions"])
         self.infra_build_threshold = float(params["infra_build_threshold"])
         self.apply_cost_discounting = bool(params["apply_cost_discounting"])
@@ -292,6 +329,92 @@ class Stage3Evaluator:
         contracts = load_stage3_contracts(config, base_dir=base_dir)
         return cls(config=config, contracts=contracts)
 
+    def effective_adoption_headroom(self) -> np.ndarray:
+        """Return max feasible additional household adoption per unit.
+
+        Constrained jointly by household coverage ceiling headroom and remaining
+        population clean-fuel headroom converted via ``coverage_bridge_factor``.
+        """
+def effective_adoption_headroom(self) -> np.ndarray:
+        """Return max feasible additional household adoption per unit.
+
+        Constrained jointly by household coverage ceiling headroom and remaining
+        population clean-fuel headroom converted via ``coverage_bridge_factor``.
+        """
+        hh_headroom = np.maximum(0.0, self._coverage_ceiling - self._baseline_clean_fuel_households)
+        pop_headroom_hh = (
+            np.maximum(0.0, 1.0 - self._baseline_clean_fuel_population)
+            / self._coverage_bridge_factor
+        )
+        return np.minimum(hh_headroom, pop_headroom_hh)
+        pop_headroom_hh = (
+            np.maximum(0.0, 1.0 - self._baseline_clean_fuel_population)
+            / self._coverage_bridge_factor
+        )
+        return np.minimum(hh_headroom, pop_headroom_hh)
+
+    def evaluate_effective_gains(
+        self,
+        eff_gain_u: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Evaluate 2040 DALYs (mean, lower, upper) and equity gaps from effective gains.
+
+        Args:
+            eff_gain_u: Array of shape ``(U,)`` or ``(N, U)`` containing effective
+                clean-cooking exposure gains above 2040 BAU per unit.
+
+        Returns:
+            Tuple ``(dalys_mean, dalys_lower, dalys_upper, equity_gap_asr, equity_gap_dalys_abs)``
+            each with shape ``(N,)`` (or ``(1,)`` if 1D input).
+        """
+        arr = np.asarray(eff_gain_u, dtype=float)
+        if arr.ndim == 1:
+            arr = arr[np.newaxis, :]
+        if arr.ndim != 2 or arr.shape[1] != self.n_units:
+            raise ValueError(
+                f"Expected eff_gain_u shape (N, {self.n_units}) or "
+                f"({self.n_units},), got {arr.shape}."
+            )
+
+        max_headroom = np.maximum(0.0, 1.0 - self._baseline_clean_fuel_population)[np.newaxis, :]
+        delta_pop = np.maximum(0.0, arr) * self._coverage_bridge_factor[np.newaxis, :]
+        delta_c = np.minimum(delta_pop, max_headroom)  # (N, U)
+
+        mult_female = np.exp(self._slope_female[np.newaxis, :] * delta_c)
+        mult_male = np.exp(self._slope_male[np.newaxis, :] * delta_c)
+        mult = np.stack([mult_female, mult_male], axis=-1)  # (N, U, 2)
+
+        bau_val = self._bau_dalys_val[np.newaxis, :, :]  # (1, U, 2)
+        bau_low = self._bau_dalys_low[np.newaxis, :, :]
+        bau_up = self._bau_dalys_up[np.newaxis, :, :]
+
+        dalys_mean_us = mult * bau_val
+        bau_lo_hw = mult * (bau_val - bau_low)
+        bau_hi_hw = mult * (bau_up - bau_val)
+        surr_hw = dalys_mean_us * (
+            1.96 * self._surrogate_sd[np.newaxis, :, np.newaxis] * delta_c[:, :, np.newaxis]
+        )
+        dalys_low_us = np.maximum(0.0, dalys_mean_us - np.hypot(bau_lo_hw, surr_hw))
+        dalys_up_us = dalys_mean_us + np.hypot(bau_hi_hw, surr_hw)
+
+        dalys_2040_mean = np.sum(dalys_mean_us, axis=(1, 2))
+        dalys_2040_lower = np.sum(dalys_low_us, axis=(1, 2))
+        dalys_2040_upper = np.sum(dalys_up_us, axis=(1, 2))
+
+        asr_us = mult * self._bau_asr_val[np.newaxis, :, :]  # (N, U, 2)
+        asr_gap_u = np.abs(asr_us[:, :, 0] - asr_us[:, :, 1])  # (N, U)
+        equity_gap_asr = np.sum(asr_gap_u * self._pop_weights[np.newaxis, :], axis=1)
+        equity_gap_dalys_abs = np.abs(
+            np.sum(dalys_mean_us[:, :, 0] - dalys_mean_us[:, :, 1], axis=1)
+        )
+        return (
+            dalys_2040_mean,
+            dalys_2040_lower,
+            dalys_2040_upper,
+            equity_gap_asr,
+            equity_gap_dalys_abs,
+        )
+
     def evaluate(self, x: np.ndarray) -> EvaluationResult:
         """Evaluate a single ``(48,)`` or batched ``(N, 48)`` decision array."""
         raw_arr = np.asarray(x, dtype=float)
@@ -316,39 +439,14 @@ class Stage3Evaluator:
             x_cook * self._non_infra_effectiveness[np.newaxis, :, :, np.newaxis],
             axis=(2, 3),
         )  # (N, U)
-        max_headroom = np.maximum(0.0, 1.0 - self._cf_bau_2040)[np.newaxis, :]
-        delta_c = np.minimum(eff_gain_u, max_headroom)  # (N, U)
 
-        # Log-linear sex-specific multipliers: M_female, M_male of shape (N, U)
-        mult_female = np.exp(self._slope_female[np.newaxis, :] * delta_c)
-        mult_male = np.exp(self._slope_male[np.newaxis, :] * delta_c)
-        mult = np.stack([mult_female, mult_male], axis=-1)  # (N, U, 2)
-
-        # Projected 2040 DALYs (mean, lower, upper) across units and sexes
-        bau_val = self._bau_dalys_val[np.newaxis, :, :]  # (1, U, 2)
-        bau_low = self._bau_dalys_low[np.newaxis, :, :]
-        bau_up = self._bau_dalys_up[np.newaxis, :, :]
-
-        dalys_mean_us = mult * bau_val
-        bau_lo_hw = mult * (bau_val - bau_low)
-        bau_hi_hw = mult * (bau_up - bau_val)
-        surr_hw = dalys_mean_us * (
-            1.96 * self._surrogate_sd[np.newaxis, :, np.newaxis] * delta_c[:, :, np.newaxis]
-        )
-        dalys_low_us = np.maximum(0.0, dalys_mean_us - np.hypot(bau_lo_hw, surr_hw))
-        dalys_up_us = dalys_mean_us + np.hypot(bau_hi_hw, surr_hw)
-
-        dalys_2040_mean = np.sum(dalys_mean_us, axis=(1, 2))
-        dalys_2040_lower = np.sum(dalys_low_us, axis=(1, 2))
-        dalys_2040_upper = np.sum(dalys_up_us, axis=(1, 2))
-
-        # Equity metrics
-        asr_us = mult * self._bau_asr_val[np.newaxis, :, :]  # (N, U, 2)
-        asr_gap_u = np.abs(asr_us[:, :, 0] - asr_us[:, :, 1])  # (N, U)
-        equity_gap_asr = np.sum(asr_gap_u * self._pop_weights[np.newaxis, :], axis=1)
-        equity_gap_dalys_abs = np.abs(
-            np.sum(dalys_mean_us[:, :, 0] - dalys_mean_us[:, :, 1], axis=1)
-        )
+        (
+            dalys_2040_mean,
+            dalys_2040_lower,
+            dalys_2040_upper,
+            equity_gap_asr,
+            equity_gap_dalys_abs,
+        ) = self.evaluate_effective_gains(eff_gain_u)
 
         # Costs (cooking continuous + infra binary indicator >= threshold)
         disc = self._period_discount[np.newaxis, np.newaxis, np.newaxis, :]
@@ -371,20 +469,19 @@ class Stage3Evaluator:
             np.maximum(0.0, x_cook - self._non_infra_max_adoption[np.newaxis, :, :, :]),
             axis=(1, 2, 3),
         )
+        effective_headroom = self.effective_adoption_headroom()
         violation_coverage_ceiling = np.sum(
-            np.maximum(
-                0.0,
-                self._cf_bau_2040[np.newaxis, :]
-                + raw_gain_u
-                - self._coverage_ceiling[np.newaxis, :],
-            ),
+            np.maximum(0.0, raw_gain_u - effective_headroom[np.newaxis, :]),
             axis=1,
         )
 
-        # Data-driven infra prerequisites (same or earlier period q <= p, mirroring PDDL)
+        # Data-driven infra prerequisites (strictly earlier period q < p, matching MDP & PDDL)
         cum_built = np.maximum.accumulate(infra_built, axis=2)  # (N, U, P)
-        lpg_ready = np.maximum(self._lpg_infra_init[np.newaxis, :, np.newaxis], cum_built)
-        grid_ready = np.maximum(self._grid_ready_init[np.newaxis, :, np.newaxis], cum_built)
+        earlier_built = np.zeros_like(cum_built)
+        if self.n_periods > 1:
+            earlier_built[:, :, 1:] = cum_built[:, :, :-1]
+        lpg_ready = np.maximum(self._lpg_infra_init[np.newaxis, :, np.newaxis], earlier_built)
+        grid_ready = np.maximum(self._grid_ready_init[np.newaxis, :, np.newaxis], earlier_built)
         x_lpg = tensor[:, :, self._idx_lpg, :]
         x_elec = tensor[:, :, self._idx_elec, :]
         violation_infra_prereq = np.sum(
