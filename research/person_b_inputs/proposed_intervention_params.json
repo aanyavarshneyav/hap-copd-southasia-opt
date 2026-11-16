@@ -1,0 +1,170 @@
+{
+  "schema_version": "1.0",
+  "is_mock": false,
+  "data_version": "B07_PROPOSED_2024USD_PARTIAL",
+  "generated_at": "2026-11-16T19:50:54Z",
+  "note": "PROPOSED Contract 4 integration file (kept in research/person_b_inputs/ pending Person A Contracts 1-3, cost-boundary harmonization, and infra_lpg_grid fixed capex sourcing). Null fields mark genuine unresolved empirical gaps.",
+  "total_budget_usd_millions": null,
+  "infra_build_threshold": 0.5,
+  "apply_cost_discounting": false,
+  "discount_factor": 0.774,
+  "period_order": [
+    "P1",
+    "P2",
+    "P3"
+  ],
+  "coverage_ceiling": {
+    "IND_urban": 0.99,
+    "IND_rural": 0.95,
+    "NPL_urban": 0.98,
+    "NPL_rural": 0.95
+  },
+  "effectiveness": {
+    "IND_urban": {
+      "lpg_subsidy": 0.88,
+      "improved_biomass": 0.25,
+      "electric_induction": 0.92,
+      "infra_lpg_grid": 0.0
+    },
+    "IND_rural": {
+      "lpg_subsidy": 0.78,
+      "improved_biomass": 0.25,
+      "electric_induction": 0.85,
+      "infra_lpg_grid": 0.0
+    },
+    "NPL_urban": {
+      "lpg_subsidy": 0.86,
+      "improved_biomass": 0.25,
+      "electric_induction": 0.9,
+      "infra_lpg_grid": 0.0
+    },
+    "NPL_rural": {
+      "lpg_subsidy": 0.78,
+      "improved_biomass": 0.25,
+      "electric_induction": 0.85,
+      "infra_lpg_grid": 0.0
+    }
+  },
+  "unit_costs_usd_millions": {
+    "IND_urban": {
+      "lpg_subsidy": 11963.51,
+      "improved_biomass": 5597.58,
+      "electric_induction": 6606.39,
+      "infra_lpg_grid": null
+    },
+    "IND_rural": {
+      "lpg_subsidy": 20120.71,
+      "improved_biomass": 9414.24,
+      "electric_induction": 11110.9,
+      "infra_lpg_grid": null
+    },
+    "NPL_urban": {
+      "lpg_subsidy": 552.11,
+      "improved_biomass": 207.3,
+      "electric_induction": 293.31,
+      "infra_lpg_grid": null
+    },
+    "NPL_rural": {
+      "lpg_subsidy": 292.11,
+      "improved_biomass": 97.49,
+      "electric_induction": 137.94,
+      "infra_lpg_grid": null
+    }
+  },
+  "max_adoption_per_period": {
+    "IND_urban": {
+      "lpg_subsidy": {
+        "P1": 0.05,
+        "P2": 0.05,
+        "P3": 0.05
+      },
+      "improved_biomass": {
+        "P1": 0.2,
+        "P2": 0.2,
+        "P3": 0.2
+      },
+      "electric_induction": {
+        "P1": 0.1,
+        "P2": 0.15,
+        "P3": 0.15
+      },
+      "infra_lpg_grid": {
+        "P1": 1.0,
+        "P2": 1.0,
+        "P3": 1.0
+      }
+    },
+    "IND_rural": {
+      "lpg_subsidy": {
+        "P1": 0.24,
+        "P2": 0.24,
+        "P3": 0.2
+      },
+      "improved_biomass": {
+        "P1": 0.2,
+        "P2": 0.2,
+        "P3": 0.2
+      },
+      "electric_induction": {
+        "P1": 0.1,
+        "P2": 0.15,
+        "P3": 0.15
+      },
+      "infra_lpg_grid": {
+        "P1": 1.0,
+        "P2": 1.0,
+        "P3": 1.0
+      }
+    },
+    "NPL_urban": {
+      "lpg_subsidy": {
+        "P1": 0.15,
+        "P2": 0.15,
+        "P3": 0.15
+      },
+      "improved_biomass": {
+        "P1": 0.2,
+        "P2": 0.2,
+        "P3": 0.2
+      },
+      "electric_induction": {
+        "P1": 0.1,
+        "P2": 0.15,
+        "P3": 0.15
+      },
+      "infra_lpg_grid": {
+        "P1": 1.0,
+        "P2": 1.0,
+        "P3": 1.0
+      }
+    },
+    "NPL_rural": {
+      "lpg_subsidy": {
+        "P1": 0.1,
+        "P2": 0.15,
+        "P3": 0.15
+      },
+      "improved_biomass": {
+        "P1": 0.2,
+        "P2": 0.2,
+        "P3": 0.2
+      },
+      "electric_induction": {
+        "P1": 0.1,
+        "P2": 0.15,
+        "P3": 0.15
+      },
+      "infra_lpg_grid": {
+        "P1": 1.0,
+        "P2": 1.0,
+        "P3": 1.0
+      }
+    }
+  },
+  "_auxiliary_households_2025_derived": {
+    "IND_urban": 124390773,
+    "IND_rural": 209205395,
+    "NPL_urban": 4606688,
+    "NPL_rural": 2166519
+  }
+}

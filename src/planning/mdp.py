@@ -287,7 +287,7 @@ def _is_action_valid_and_cost(
         else:
             c_pos = bio_pos
 
-        if raws[u] + steps > max_bin:
+        if float(step_u[u]) <= 0.0 or raws[u] + steps > max_bin:
             return False, 0.0
         cap = float(evaluator._non_infra_max_adoption[u, c_pos, period_idx])
         if steps * float(step_u[u]) > cap + _FLOAT_EPS:
@@ -376,7 +376,7 @@ def build_layered_mdp(
     n_b = mdp_cfg.budget_bins
     budget_step = evaluator.total_budget_usd_millions / float(n_b - 1) if n_b > 1 else 0.0
 
-    headroom = np.maximum(0.0, evaluator._coverage_ceiling - evaluator._cf_bau_2040 - _FLOAT_EPS)
+    headroom = np.maximum(0.0, evaluator.effective_adoption_headroom() - _FLOAT_EPS)
     step_u = headroom / float(max_bin)
     lpg_pos = int(np.flatnonzero(evaluator._non_infra_indices == evaluator._idx_lpg)[0])
     elec_pos = int(np.flatnonzero(evaluator._non_infra_indices == evaluator._idx_elec)[0])

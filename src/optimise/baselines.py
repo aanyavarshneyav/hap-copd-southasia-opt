@@ -113,7 +113,7 @@ def run_proportional_equal_split(
 
     # Unit max feasible cooking vector respecting adoption caps & coverage ceiling
     unit_full_cook = np.where(allow_mask, evaluator._non_infra_max_adoption, 0.0)
-    headroom = np.maximum(0.0, evaluator._coverage_ceiling - evaluator._cf_bau_2040 - _FLOAT_EPS)
+    headroom = np.maximum(0.0, evaluator.effective_adoption_headroom() - _FLOAT_EPS)
     for u_idx in range(evaluator.n_units):
         total_u = float(np.sum(unit_full_cook[u_idx]))
         if total_u > headroom[u_idx] and total_u > 0.0:
@@ -189,7 +189,7 @@ def run_greedy_dalys_per_dollar(
     curr_cost = float(curr_eval.total_cost_usd_millions)
     n_eval = 1
 
-    headroom = np.maximum(0.0, evaluator._coverage_ceiling - evaluator._cf_bau_2040 - _FLOAT_EPS)
+    headroom = np.maximum(0.0, evaluator.effective_adoption_headroom() - _FLOAT_EPS)
 
     while True:
         infra_built = (tensor[:, infra_idx, :] >= evaluator.infra_build_threshold).astype(float)
