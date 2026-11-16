@@ -1,0 +1,123 @@
+# Default project configuration (config-driven; no hard-coded paths in src/)
+project:
+  name: "hap-copd-southasia-opt"
+  version: "0.1.0"
+  report_format: "markdown"  # TODO(owner): confirm final university submission format (LaTeX/Word/PDF)
+
+seeds:
+  global: 42
+  numpy: 42
+  sklearn: 42
+  pymoo: 42
+  mdp: 42
+
+paths:
+  raw_dir: "data/raw"
+  interim_dir: "data/interim"
+  processed_dir: "data/processed"
+  outputs_figures_dir: "outputs/figures"
+  outputs_tables_dir: "outputs/tables"
+  outputs_models_dir: "outputs/models"
+  pddl_dir: "pddl"
+  report_dir: "report"
+  assumptions_file: "docs/ASSUMPTIONS.md"
+  raw_manifest: "data/raw/manifest.json"
+
+interfaces:
+  use_mock_forecasts: true  # Flip to false once Stage 2 exports validated forecasts_stage3.csv
+  forecast_contract_file: "data/processed/forecasts_stage3.csv"
+  forecast_mock_file: "data/processed/forecasts_stage3_mock.csv"
+  baseline_state_file: "data/processed/baseline_unit_state.csv"
+  baseline_state_mock_file: "data/processed/baseline_unit_state_mock.csv"
+  surrogate_file: "data/processed/exposure_response_surrogate.json"
+  surrogate_mock_file: "data/processed/exposure_response_surrogate_mock.json"
+  intervention_params_file: "configs/intervention_params.json"
+  intervention_params_mock_file: "data/processed/intervention_params_mock.json"
+
+geography:
+  forecast_panel_countries:
+    - "India"
+    - "Nepal"
+    - "Pakistan"
+    - "Bangladesh"
+    - "Bhutan"
+  allocation_units:
+    - "IND_urban"
+    - "IND_rural"
+    - "NPL_urban"
+    - "NPL_rural"
+
+time:
+  historical_start: 1990
+  historical_end: 2023
+  forecast_start: 2024
+  forecast_end: 2040
+  decision_periods:
+    - id: "P1"
+      label: "2026-2030"
+      start_year: 2026
+      end_year: 2030
+    - id: "P2"
+      label: "2031-2035"
+      start_year: 2031
+      end_year: 2035
+    - id: "P3"
+      label: "2036-2040"
+      start_year: 2036
+      end_year: 2040
+
+interventions:
+  - "lpg_subsidy"
+  - "improved_biomass"
+  - "electric_induction"
+  - "infra_lpg_grid"
+
+stage1:
+  eapc_reference_years: [1990, 2023]
+  max_joinpoints: 3
+
+stage2:
+  rolling_cv_origins: [2008, 2013, 2018]
+  rolling_cv_horizon: 5
+  ml_models: ["random_forest", "hist_gradient_boosting"]
+  stat_models: ["arima", "ets", "poisson_apc"]
+  uncertainty_draws: 500
+
+stage3:
+  algorithm: "NSGA2"
+  population_size: 80
+  n_generations: 100
+  seeds: [42, 43, 44, 45, 46]
+  crossover_prob: 0.9
+  crossover_eta: 15.0
+  mutation_eta: 20.0
+  eliminate_duplicates: true
+  use_repair: true
+  repair_budget: true
+  greedy_step_size: 0.05
+  total_budget_usd_millions: null  # TODO(owner): anchor from docs/ASSUMPTIONS.md once sourced
+  equity_metric: "abs_asr_gap_female_male"
+  eval_mode: "surrogate"  # "surrogate" inside GA loop; re-evaluate Pareto front on full Stage 2
+
+planning:
+  mdp:
+    coverage_bins: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+    budget_bins: 6
+    discount_factor: 0.774  # ~0.95^5 per 5-year period; sensitivity tested with 1.0
+    cost_weight_lambda: 3500.0  # Calibrated from Stage 3 Pareto slope (~3,431 DALYs/$1M upper-quantile tangent; DEC-018)
+    transition_probs: [0.15, 0.70, 0.15]  # [low, nominal, high] uptake (ASM-15)
+    n_rollouts: 1000
+    vi_tol: 1.0e-6
+    vi_max_iter: 500
+    lambda_sensitivity: [0.0, 1000.0, 2500.0, 3500.0, 5000.0, 7500.0, 10000.0]
+    discount_sensitivity: [0.774, 1.0]
+  compare:
+    n_rollouts: 1000
+    shock_multipliers: [0.5, 1.0, 1.25]  # [low, nominal, high] uptake multipliers (PLANNING_SPEC)
+    n_pareto_sample: 4
+    budget_bins_sensitivity: [6, 11]
+    lambda_eq_sensitivity: [0.0, 2500.0, 10000.0, 25000.0, 50000.0]
+  pddl:
+    planner: "pyperplan"
+    search: "astar"
+    heuristic: "hff"

@@ -1,0 +1,348 @@
+{
+  "schema_version": "1.0",
+  "source": "src.planning.htn",
+  "generated_at": "2026-11-16T17:25:24Z",
+  "is_mock": true,
+  "warning_mock_inputs": true,
+  "data_version": "MOCK_V1",
+  "summary": {
+    "n_primitive_leaves": 9,
+    "dalys_2040_mean": 3448806.227753462,
+    "dalys_2040_lower": 2521156.4956532754,
+    "dalys_2040_upper": 4376455.959855791,
+    "total_cost_usd_millions": 395.55999999904196,
+    "equity_gap_asr": 22.589653168996183,
+    "is_feasible": true
+  },
+  "leaves": [
+    {
+      "name": "!op_build_lpg_grid_infra(IND_rural, P1)",
+      "node_type": "primitive",
+      "unit": "IND_rural",
+      "intervention": "infra_lpg_grid",
+      "period": "P1",
+      "allocation_value": 0.5,
+      "cost_usd_millions": 95.0
+    },
+    {
+      "name": "!op_deploy_lpg_subsidy(IND_urban, P1)",
+      "node_type": "primitive",
+      "unit": "IND_urban",
+      "intervention": "lpg_subsidy",
+      "period": "P1",
+      "allocation_value": 0.1,
+      "cost_usd_millions": 32.0
+    },
+    {
+      "name": "!op_deploy_lpg_subsidy(IND_rural, P2)",
+      "node_type": "primitive",
+      "unit": "IND_rural",
+      "intervention": "lpg_subsidy",
+      "period": "P2",
+      "allocation_value": 0.2,
+      "cost_usd_millions": 124.0
+    },
+    {
+      "name": "!op_deploy_lpg_subsidy(IND_rural, P3)",
+      "node_type": "primitive",
+      "unit": "IND_rural",
+      "intervention": "lpg_subsidy",
+      "period": "P3",
+      "allocation_value": 0.17,
+      "cost_usd_millions": 105.4
+    },
+    {
+      "name": "!op_build_lpg_grid_infra(NPL_rural, P1)",
+      "node_type": "primitive",
+      "unit": "NPL_rural",
+      "intervention": "infra_lpg_grid",
+      "period": "P1",
+      "allocation_value": 0.5,
+      "cost_usd_millions": 16.0
+    },
+    {
+      "name": "!op_deploy_lpg_subsidy(NPL_urban, P1)",
+      "node_type": "primitive",
+      "unit": "NPL_urban",
+      "intervention": "lpg_subsidy",
+      "period": "P1",
+      "allocation_value": 0.2,
+      "cost_usd_millions": 3.6
+    },
+    {
+      "name": "!op_deploy_lpg_subsidy(NPL_rural, P2)",
+      "node_type": "primitive",
+      "unit": "NPL_rural",
+      "intervention": "lpg_subsidy",
+      "period": "P2",
+      "allocation_value": 0.2,
+      "cost_usd_millions": 9.6
+    },
+    {
+      "name": "!op_deploy_lpg_subsidy(NPL_urban, P2)",
+      "node_type": "primitive",
+      "unit": "NPL_urban",
+      "intervention": "lpg_subsidy",
+      "period": "P2",
+      "allocation_value": 0.02,
+      "cost_usd_millions": 0.36
+    },
+    {
+      "name": "!op_deploy_lpg_subsidy(NPL_rural, P3)",
+      "node_type": "primitive",
+      "unit": "NPL_rural",
+      "intervention": "lpg_subsidy",
+      "period": "P3",
+      "allocation_value": 0.2,
+      "cost_usd_millions": 9.6
+    }
+  ],
+  "tree": {
+    "name": "AchieveSouthAsiaCleanCookingPlan(2026-2040)",
+    "node_type": "compound",
+    "method": "TotalOrderForwardDecomposition",
+    "children": [
+      {
+        "name": "PlanCountryProgram(India)",
+        "node_type": "compound",
+        "method": "DecomposeUnitsByPeriod",
+        "children": [
+          {
+            "name": "PlanUnitProgram(IND_rural, P1)",
+            "node_type": "compound",
+            "method": "M2_BuildInfraPrerequisite",
+            "children": [
+              {
+                "name": "BuildPrerequisites(IND_rural, P1)",
+                "node_type": "compound",
+                "method": "M2a_BuildLpgGridInfra",
+                "children": [
+                  {
+                    "name": "!op_build_lpg_grid_infra(IND_rural, P1)",
+                    "node_type": "primitive",
+                    "unit": "IND_rural",
+                    "intervention": "infra_lpg_grid",
+                    "period": "P1",
+                    "allocation_value": 0.5,
+                    "cost_usd_millions": 95.0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "PlanUnitProgram(IND_urban, P1)",
+            "node_type": "compound",
+            "method": "M1_DeployCleanCooking",
+            "children": [
+              {
+                "name": "ScaleCleanFuel(IND_urban, P1)",
+                "node_type": "compound",
+                "method": "M1a_lpg_subsidy",
+                "children": [
+                  {
+                    "name": "!op_deploy_lpg_subsidy(IND_urban, P1)",
+                    "node_type": "primitive",
+                    "unit": "IND_urban",
+                    "intervention": "lpg_subsidy",
+                    "period": "P1",
+                    "allocation_value": 0.1,
+                    "cost_usd_millions": 32.0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "PlanUnitProgram(IND_rural, P2)",
+            "node_type": "compound",
+            "method": "M1_DeployCleanCooking",
+            "children": [
+              {
+                "name": "ScaleCleanFuel(IND_rural, P2)",
+                "node_type": "compound",
+                "method": "M1a_lpg_subsidy",
+                "children": [
+                  {
+                    "name": "!op_deploy_lpg_subsidy(IND_rural, P2)",
+                    "node_type": "primitive",
+                    "unit": "IND_rural",
+                    "intervention": "lpg_subsidy",
+                    "period": "P2",
+                    "allocation_value": 0.2,
+                    "cost_usd_millions": 124.0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "PlanUnitProgram(IND_urban, P2)",
+            "node_type": "compound",
+            "method": "M4_NoOp_Exhausted"
+          },
+          {
+            "name": "PlanUnitProgram(IND_rural, P3)",
+            "node_type": "compound",
+            "method": "M1_DeployCleanCooking",
+            "children": [
+              {
+                "name": "ScaleCleanFuel(IND_rural, P3)",
+                "node_type": "compound",
+                "method": "M1a_lpg_subsidy",
+                "children": [
+                  {
+                    "name": "!op_deploy_lpg_subsidy(IND_rural, P3)",
+                    "node_type": "primitive",
+                    "unit": "IND_rural",
+                    "intervention": "lpg_subsidy",
+                    "period": "P3",
+                    "allocation_value": 0.17,
+                    "cost_usd_millions": 105.4
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "PlanUnitProgram(IND_urban, P3)",
+            "node_type": "compound",
+            "method": "M4_NoOp_Exhausted"
+          }
+        ]
+      },
+      {
+        "name": "PlanCountryProgram(Nepal)",
+        "node_type": "compound",
+        "method": "DecomposeUnitsByPeriod",
+        "children": [
+          {
+            "name": "PlanUnitProgram(NPL_rural, P1)",
+            "node_type": "compound",
+            "method": "M2_BuildInfraPrerequisite",
+            "children": [
+              {
+                "name": "BuildPrerequisites(NPL_rural, P1)",
+                "node_type": "compound",
+                "method": "M2a_BuildLpgGridInfra",
+                "children": [
+                  {
+                    "name": "!op_build_lpg_grid_infra(NPL_rural, P1)",
+                    "node_type": "primitive",
+                    "unit": "NPL_rural",
+                    "intervention": "infra_lpg_grid",
+                    "period": "P1",
+                    "allocation_value": 0.5,
+                    "cost_usd_millions": 16.0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "PlanUnitProgram(NPL_urban, P1)",
+            "node_type": "compound",
+            "method": "M1_DeployCleanCooking",
+            "children": [
+              {
+                "name": "ScaleCleanFuel(NPL_urban, P1)",
+                "node_type": "compound",
+                "method": "M1a_lpg_subsidy",
+                "children": [
+                  {
+                    "name": "!op_deploy_lpg_subsidy(NPL_urban, P1)",
+                    "node_type": "primitive",
+                    "unit": "NPL_urban",
+                    "intervention": "lpg_subsidy",
+                    "period": "P1",
+                    "allocation_value": 0.2,
+                    "cost_usd_millions": 3.6
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "PlanUnitProgram(NPL_rural, P2)",
+            "node_type": "compound",
+            "method": "M1_DeployCleanCooking",
+            "children": [
+              {
+                "name": "ScaleCleanFuel(NPL_rural, P2)",
+                "node_type": "compound",
+                "method": "M1a_lpg_subsidy",
+                "children": [
+                  {
+                    "name": "!op_deploy_lpg_subsidy(NPL_rural, P2)",
+                    "node_type": "primitive",
+                    "unit": "NPL_rural",
+                    "intervention": "lpg_subsidy",
+                    "period": "P2",
+                    "allocation_value": 0.2,
+                    "cost_usd_millions": 9.6
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "PlanUnitProgram(NPL_urban, P2)",
+            "node_type": "compound",
+            "method": "M1_DeployCleanCooking",
+            "children": [
+              {
+                "name": "ScaleCleanFuel(NPL_urban, P2)",
+                "node_type": "compound",
+                "method": "M1a_lpg_subsidy",
+                "children": [
+                  {
+                    "name": "!op_deploy_lpg_subsidy(NPL_urban, P2)",
+                    "node_type": "primitive",
+                    "unit": "NPL_urban",
+                    "intervention": "lpg_subsidy",
+                    "period": "P2",
+                    "allocation_value": 0.02,
+                    "cost_usd_millions": 0.36
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "PlanUnitProgram(NPL_rural, P3)",
+            "node_type": "compound",
+            "method": "M1_DeployCleanCooking",
+            "children": [
+              {
+                "name": "ScaleCleanFuel(NPL_rural, P3)",
+                "node_type": "compound",
+                "method": "M1a_lpg_subsidy",
+                "children": [
+                  {
+                    "name": "!op_deploy_lpg_subsidy(NPL_rural, P3)",
+                    "node_type": "primitive",
+                    "unit": "NPL_rural",
+                    "intervention": "lpg_subsidy",
+                    "period": "P3",
+                    "allocation_value": 0.2,
+                    "cost_usd_millions": 9.6
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "PlanUnitProgram(NPL_urban, P3)",
+            "node_type": "compound",
+            "method": "M4_NoOp_Exhausted"
+          }
+        ]
+      },
+      {
+        "name": "VerifyBudgetAndEquityGuard(feasible=True, cost=$395.6M)",
+        "node_type": "compound",
+        "method": "EvaluatorGuardCheck"
+      }
+    ]
+  }
+}

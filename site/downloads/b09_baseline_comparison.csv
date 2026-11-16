@@ -1,0 +1,5 @@
+unit,households_2025_derived,baseline_clean_fuel_population,population_baseline_year,population_baseline_source,baseline_clean_fuel_households_obs,household_baseline_year,household_baseline_source,dhs_hh_minus_pop_spread_obs,household_2024_sensitivity_derived,coverage_ceiling_households,gap_households_from_obs,gap_population_from_2024,bau_2040_population_status
+IND_urban,124390773,0.96,2024,"WHO GHO / WB SDG 7.1.2 (2024, people)",0.897,2020,"India NFHS-5 (2019-21, DHS HC_CKFL_H_CLN)",0.007,0.967,0.99,0.093,0.03,blocked_person_a (Stage 2 pending)
+IND_rural,209205395,0.69,2024,"WHO GHO / WB SDG 7.1.2 (2024, people)",0.432,2020,"India NFHS-5 (2019-21, DHS HC_CKFL_H_CLN)",0.023,0.713,0.95,0.518,0.26,blocked_person_a (Stage 2 pending)
+NPL_urban,4606688,0.64,2024,"WHO GHO / WB SDG 7.1.2 (2024, people)",0.5846,2021,Nepal NPHC 2021 Table 07 (conventional HH),0.042,0.682,0.98,0.3954,0.34,blocked_person_a (Stage 2 pending)
+NPL_rural,2166519,0.25,2024,"WHO GHO / WB SDG 7.1.2 (2024, people)",0.2036,2021,Nepal NPHC 2021 Table 07 (conventional HH),0.019,0.269,0.95,0.7464,0.7,blocked_person_a (Stage 2 pending)
