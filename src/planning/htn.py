@@ -227,7 +227,7 @@ def build_htn_plan(evaluator: Stage3Evaluator) -> tuple[HTNNode, np.ndarray, Eva
         remaining_headroom={
             u: max(
                 0.0,
-                float(evaluator._coverage_ceiling[idx] - evaluator._cf_bau_2040[idx]) - _FLOAT_EPS,
+                float(evaluator.effective_adoption_headroom()[idx]) - _FLOAT_EPS,
             )
             for idx, u in enumerate(evaluator.units)
         },

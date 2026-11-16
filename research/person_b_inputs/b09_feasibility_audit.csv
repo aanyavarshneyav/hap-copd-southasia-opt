@@ -1,0 +1,5 @@
+unit,infra_ready_init_assumed,hh_obs_baseline,pop_2024_baseline,coverage_ceiling,gap_hh_obs,gap_pop_2024,lpg_unlocked_cap_sum,elec_unlocked_cap_sum,bio_cap_sum,combined_unlocked_cap_sum,lpg_alone_closes_hh_obs_gap,lpg_alone_closes_pop_2024_gap,combined_closes_hh_obs_gap,combined_closes_pop_2024_gap,ceiling_margin_over_pop_2024,notes
+IND_urban,True,0.897,0.96,0.99,0.093,0.03,0.15,0.4,0.6,1.15,True,True,True,True,0.03,CRITICAL: 2024 pop=0.96 -> 2040 BAU likely ~0.98-0.99; verify ceiling >= cf_bau_2040.
+IND_rural,False,0.432,0.69,0.95,0.518,0.26,0.44,0.3,0.6,1.34,False,True,True,True,0.26,Unlocked P2+P3 or P1-P3 caps sufficient for 2024 pop gap.
+NPL_urban,True,0.5846,0.64,0.98,0.3954,0.34,0.45,0.4,0.6,1.45,True,True,True,True,0.34,Unlocked P2+P3 or P1-P3 caps sufficient for 2024 pop gap.
+NPL_rural,False,0.2036,0.25,0.95,0.7464,0.7,0.3,0.3,0.6,1.2,False,False,True,True,0.7,CRITICAL: q<p blocks P1 LPG/Elec; unlocked P2+P3 LPG+Elec=0.60 < 0.70/0.7464 gap; needs P1 improved_biomass.

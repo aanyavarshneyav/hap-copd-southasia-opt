@@ -10,6 +10,7 @@ config and contract files — never hard-coded.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -185,7 +186,14 @@ def _extract_bau_2040_arrays(
 class Stage3Evaluator:
     """Vectorized evaluator for 2040 DALYs, cost, equity gap, and constraints."""
 
-    def __init__(self, config: dict[str, Any], contracts: Stage3Contracts) -> None:
+    def __init__(
+        self,
+        config: dict[str, Any],
+        contracts: Stage3Contracts,
+        *,
+        baseline_clean_fuel_households: Mapping[str, float] | None = None,
+        coverage_bridge_factor: Mapping[str, float] | None = None,
+    ) -> None:
         self.units: list[str] = [str(u) for u in config["geography"]["allocation_units"]]
         self.interventions: list[str] = [str(i) for i in config["interventions"]]
         self.periods: list[str] = [str(p["id"]) for p in config["time"]["decision_periods"]]
@@ -216,8 +224,38 @@ class Stage3Evaluator:
             self._bau_dalys_up,
             self._bau_asr_val,
             self._pop_weights,
-            self._cf_bau_2040,
+            cf_bau_2040_pop,
         ) = _extract_bau_2040_arrays(contracts.forecasts_stage3, self.units)
+        self._baseline_clean_fuel_population: np.ndarray = cf_bau_2040_pop
+
+        params = contracts.intervention_params
+        hh_base_src = (
+            baseline_clean_fuel_households
+            if baseline_clean_fuel_households is not None
+            else params.get("baseline_clean_fuel_households")
+        )
+        if isinstance(hh_base_src, Mapping):
+            hh_base = np.array([float(hh_base_src[u]) for u in self.units], dtype=float)
+        else:
+            hh_base = cf_bau_2040_pop.copy()
+        if np.any(~np.isfinite(hh_base)) or np.any(hh_base < 0.0) or np.any(hh_base > 1.0):
+            raise ValueError("baseline_clean_fuel_households must be finite values in [0, 1].")
+        self._baseline_clean_fuel_households: np.ndarray = hh_base
+        # _cf_bau_2040 preserves the household baseline attribute referenced by audit helpers
+        self._cf_bau_2040: np.ndarray = self._baseline_clean_fuel_households
+
+        bridge_src = (
+            coverage_bridge_factor
+            if coverage_bridge_factor is not None
+            else params.get("coverage_bridge_factor")
+        )
+        if isinstance(bridge_src, Mapping):
+            bridge = np.array([float(bridge_src[u]) for u in self.units], dtype=float)
+        else:
+            bridge = np.ones(self.n_units, dtype=float)
+        if np.any(~np.isfinite(bridge)) or np.any(bridge <= 0.0):
+            raise ValueError("coverage_bridge_factor must contain finite values > 0.")
+        self._coverage_bridge_factor: np.ndarray = bridge
 
         # Initial infra flags from Contract 2
         baseline_indexed = contracts.baseline_unit_state.set_index("location")
@@ -245,7 +283,6 @@ class Stage3Evaluator:
         )
 
         # Intervention & constraint parameters from Contract 4
-        params = contracts.intervention_params
         self.total_budget_usd_millions = float(params["total_budget_usd_millions"])
         self.infra_build_threshold = float(params["infra_build_threshold"])
         self.apply_cost_discounting = bool(params["apply_cost_discounting"])
@@ -292,6 +329,19 @@ class Stage3Evaluator:
         contracts = load_stage3_contracts(config, base_dir=base_dir)
         return cls(config=config, contracts=contracts)
 
+    def effective_adoption_headroom(self) -> np.ndarray:
+        """Return max feasible additional household adoption per unit.
+
+        Constrained jointly by household coverage ceiling headroom and remaining
+        population clean-fuel headroom converted via ``coverage_bridge_factor``.
+        """
+        hh_headroom = np.maximum(0.0, self._coverage_ceiling - self._baseline_clean_fuel_households)
+        pop_headroom_hh = (
+            np.maximum(0.0, 1.0 - self._baseline_clean_fuel_population)
+            / self._coverage_bridge_factor
+        )
+        return np.minimum(hh_headroom, pop_headroom_hh)
+
     def evaluate_effective_gains(
         self,
         eff_gain_u: np.ndarray,
@@ -315,8 +365,9 @@ class Stage3Evaluator:
                 f"({self.n_units},), got {arr.shape}."
             )
 
-        max_headroom = np.maximum(0.0, 1.0 - self._cf_bau_2040)[np.newaxis, :]
-        delta_c = np.minimum(np.maximum(0.0, arr), max_headroom)  # (N, U)
+        max_headroom = np.maximum(0.0, 1.0 - self._baseline_clean_fuel_population)[np.newaxis, :]
+        delta_pop = np.maximum(0.0, arr) * self._coverage_bridge_factor[np.newaxis, :]
+        delta_c = np.minimum(delta_pop, max_headroom)  # (N, U)
 
         mult_female = np.exp(self._slope_female[np.newaxis, :] * delta_c)
         mult_male = np.exp(self._slope_male[np.newaxis, :] * delta_c)
@@ -407,13 +458,9 @@ class Stage3Evaluator:
             np.maximum(0.0, x_cook - self._non_infra_max_adoption[np.newaxis, :, :, :]),
             axis=(1, 2, 3),
         )
+        effective_headroom = self.effective_adoption_headroom()
         violation_coverage_ceiling = np.sum(
-            np.maximum(
-                0.0,
-                self._cf_bau_2040[np.newaxis, :]
-                + raw_gain_u
-                - self._coverage_ceiling[np.newaxis, :],
-            ),
+            np.maximum(0.0, raw_gain_u - effective_headroom[np.newaxis, :]),
             axis=1,
         )
 
