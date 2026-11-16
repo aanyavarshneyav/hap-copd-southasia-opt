@@ -138,20 +138,30 @@ def test_infrastructure_prerequisite_mirrors_pddl(evaluator: Stage3Evaluator) ->
     assert res_late.violation_infra_prereq == pytest.approx(0.10)
     assert res_late.is_feasible is False
 
-    # 3. Building infra in SAME period (P1, x >= 0.5) unlocks P1 LPG & P2 electric -> feasible
+    # 3. Building infra in SAME period (P1) does NOT unlock P1 LPG -> infeasible (q < p)
     same_period = no_infra.copy()
     same_period[_idx(evaluator, "NPL_rural", "infra_lpg_grid", "P1")] = 0.50
-    same_period[_idx(evaluator, "NPL_rural", "electric_induction", "P2")] = 0.10
     res_same = evaluator.evaluate(same_period)
-    assert res_same.violation_infra_prereq == pytest.approx(0.0)
-    assert res_same.is_feasible is True
+    assert res_same.violation_infra_prereq == pytest.approx(0.10)
+    assert res_same.is_feasible is False
 
-    # 4. Below-threshold infra (0.49 < 0.50) does NOT build infra and pays zero infra cost
-    below_thresh = no_infra.copy()
+    # 4. Infra built in STRICTLY EARLIER period (P1, x >= 0.5) unlocks P2 LPG & electric
+    earlier_period = np.zeros(evaluator.n_vars)
+    earlier_period[_idx(evaluator, "NPL_rural", "infra_lpg_grid", "P1")] = 0.50
+    earlier_period[_idx(evaluator, "NPL_rural", "lpg_subsidy", "P2")] = 0.10
+    earlier_period[_idx(evaluator, "NPL_rural", "electric_induction", "P2")] = 0.10
+    res_earlier = evaluator.evaluate(earlier_period)
+    assert res_earlier.violation_infra_prereq == pytest.approx(0.0)
+    assert res_earlier.is_feasible is True
+
+    # 5. Below-threshold infra (0.49 < 0.50) in P1 does NOT unlock P2 and pays zero infra cost
+    below_thresh = np.zeros(evaluator.n_vars)
+    below_thresh[_idx(evaluator, "NPL_rural", "lpg_subsidy", "P2")] = 0.10
+    res_no_p2 = evaluator.evaluate(below_thresh)
     below_thresh[_idx(evaluator, "NPL_rural", "infra_lpg_grid", "P1")] = 0.49
     res_below = evaluator.evaluate(below_thresh)
     assert res_below.violation_infra_prereq == pytest.approx(0.10)
-    assert res_below.total_cost_usd_millions == pytest.approx(res_no.total_cost_usd_millions)
+    assert res_below.total_cost_usd_millions == pytest.approx(res_no_p2.total_cost_usd_millions)
 
 
 def test_vectorised_batch_matches_single_evaluations(evaluator: Stage3Evaluator) -> None:
