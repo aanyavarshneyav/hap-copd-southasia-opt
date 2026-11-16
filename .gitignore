@@ -14,22 +14,31 @@ venv/
 .coverage
 htmlcov/
 
-# Raw, interim, and large processed data (never commit raw exports or large artifacts)
+# Raw, interim, and large processed data (never commit raw exports or large archives)
 data/raw/*
 !data/raw/.gitkeep
+!data/raw/manifest.json
 data/interim/*
 !data/interim/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
 !data/processed/*_mock.*
+!data/processed/forecasts_stage3.csv
+!data/processed/forecasts_stage3.csv.meta.json
+!data/processed/baseline_unit_state.csv
+!data/processed/baseline_unit_state.csv.meta.json
+!data/processed/exposure_response_surrogate.json
+!data/processed/stage2_uncertainty_draws.csv
 
-# Large outputs and saved model weights
+# Outputs and figures
 outputs/models/*
 !outputs/models/.gitkeep
 outputs/figures/*
 !outputs/figures/.gitkeep
+!outputs/figures/*.png
 outputs/tables/*
 !outputs/tables/.gitkeep
+!outputs/tables/*.csv
 
 # Notebooks checkpoints
 .ipynb_checkpoints/
