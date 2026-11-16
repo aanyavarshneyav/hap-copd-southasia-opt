@@ -1,0 +1,15 @@
+# Decision Log
+
+Running log of architectural, methodological, and tooling decisions. Append new rows when scope, formulas, or tool choices change.
+
+| Date | ID | Decision | Rationale | Owner |
+| --- | --- | --- | --- | --- |
+| 2026-11-16 | `DEC-001` | Standardize on **Python 3.12**, `venv` + `pyproject.toml`, `ruff`, and `pytest`; **no `conda`, `uv`, or `R`**. | Keeps environment lean, deterministic, and uniform across both teammates' machines. | Shared |
+| 2026-11-16 | `DEC-002` | Use **Poisson GLM APC** (`statsmodels`, optional simple `pymc` extra) and **piecewise linear regression (`pwlf`)** with **EAPC** as minimum deliverable (no R `BAPC`/`Joinpoint`). | Satisfies 100% Python constraint and avoids heavy non-Python toolchains on CPU laptops. | Person A |
+| 2026-11-16 | `DEC-003` | Forecast panel covers the **5 GBD South Asia countries** (`India, Nepal, Pakistan, Bangladesh, Bhutan`); allocation covers **India and Nepal only, split urban/rural** (`4 units`), **no sub-national Indian states**. | Gives cross-country panel signal for Stage 2 while keeping Stage 3/MDP allocation focused on India vs. Nepal urban/rural disparities without sub-national export overhead. | Shared |
+| 2026-11-16 | `DEC-004` | Model **4 interventions** (`lpg_subsidy`, `improved_biomass`, `electric_induction`, `infra_lpg_grid`) across **three 5-year periods** (`2026-2030`, `2031-2035`, `2036-2040`). | Balances realism (infrastructure prerequisite + clean/transitional options) with compact GA (`48` vars) and MDP state spaces. | Person B |
+| 2026-11-16 | `DEC-005` | Stage 3 & Planning stack: **`pymoo` (NSGA-II)**, **custom NumPy value iteration (MDP)**, **plain-Python HTN tree**, and **`pyperplan` (STRIPS-only PDDL)**. | Lightweight, CPU-fast, transparent implementations suitable for an AI Lab project. | Person B |
+| 2026-11-16 | `DEC-006` | All workloads run **CPU-only on laptops** under a few minutes; use a **calibrated surrogate/response function** inside the GA/MDP loop and re-evaluate top Pareto points on Stage 2 outputs. | Prevents 10,000+ slow ML/APC calls inside NSGA-II from timing out on CPU laptops. | Shared |
+| 2026-11-16 | `DEC-007` | Use **WHO SDG 7.1.2 clean-cooking fuel access** as the exposure driver fallback if GBD 2023 exposure/SEV data is not downloadable, and apportion national burden to urban/rural in `docs/ASSUMPTIONS.md`. | Guarantees unblocked ingestion and links directly to intervention coverage levers. | Person A |
+| 2026-11-16 | `DEC-008` | Lock `docs/INTERFACES.md` upfront; Aanya (Person B) builds `*_mock.*` fixtures first (or paired with Rudraksh in hour 1) so Stage 3 evaluator & planning run immediately in parallel with Stage 1–2. | Ensures mocks match exact evaluator requirements and eliminates sequential blocking between tracks. | Shared |
+| 2026-11-16 | `DEC-009` | Scaffold `report/` in **Markdown** (`report/report.md`), converting to final university format (`TODO(owner)`) at submission freeze. | Keeps collaborative diffs clean in Git while preserving flexibility for final PDF/LaTeX/Word formatting. | Shared |
