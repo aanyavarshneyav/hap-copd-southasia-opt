@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "is_mock": true,
+  "data_version": "MOCK_V1",
+  "functional_form": "log_linear",
+  "generated_at": "2026-01-01T00:00:00Z",
+  "source_model": "mock_generator",
+  "warning": "SYNTHETIC MOCK DATA \u2014 PLACEHOLDER VALUES FOR PIPELINE TESTING ONLY; DO NOT CITE.",
+  "units": {
+    "IND_urban": {
+      "slope_clean_fuel": -1.3,
+      "baseline_clean_fuel": 0.88,
+      "sex_elasticity_ratio_f_to_m": 1.1,
+      "uncertainty_sd": 0.09
+    },
+    "IND_rural": {
+      "slope_clean_fuel": -1.45,
+      "baseline_clean_fuel": 0.58,
+      "sex_elasticity_ratio_f_to_m": 1.15,
+      "uncertainty_sd": 0.11
+    },
+    "NPL_urban": {
+      "slope_clean_fuel": -1.25,
+      "baseline_clean_fuel": 0.76,
+      "sex_elasticity_ratio_f_to_m": 1.1,
+      "uncertainty_sd": 0.09
+    },
+    "NPL_rural": {
+      "slope_clean_fuel": -1.5,
+      "baseline_clean_fuel": 0.4,
+      "sex_elasticity_ratio_f_to_m": 1.18,
+      "uncertainty_sd": 0.12
+    }
+  }
+}

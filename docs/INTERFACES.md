@@ -33,7 +33,7 @@ flowchart LR
 - **Day-1 Mock file:** `data/processed/forecasts_stage3_mock.csv` (+ `.meta.json`)
 - **Granularity:** One row per `location × year × sex × scenario × measure × metric`.
   - `location` (4 units): `IND_urban`, `IND_rural`, `NPL_urban`, `NPL_rural`
-  - `year`: annual `2025–2040` (at minimum `2025, 2030, 2035, 2040` plus `2026–2040`; recommended all annual years `2025–2040` = 16 years)
+  - `year`: `bau` covers all 16 annual years `2025–2040`; counterfactual anchors (`cf_25`, `cf_50`, `cf_75`, `cf_100`) are required at milestone years `{2025, 2030, 2035, 2040}` at minimum (validators also accept full annual `2025–2040` supersets).
   - `sex`: `female`, `male`, `both`
   - `scenario`: `bau` (business-as-usual clean-fuel trajectory) + reference counterfactual anchors (`cf_25`, `cf_50`, `cf_75`, `cf_100` representing clean-fuel share targets, used to cross-check the surrogate)
   - `measure`: `DALYs`, `Deaths`
@@ -51,7 +51,7 @@ flowchart LR
 | `val` | `float` | `>= 0.0` | Point / mean forecast |
 | `lower` | `float` | `>= 0.0, <= val` | 95% UI lower bound |
 | `upper` | `float` | `>= val` | 95% UI upper bound |
-| `population` | `float` | Persons (`> 0`) | Apportioned UN WPP 2024 pop |
+| `population` | `float` | Persons (`> 0`) | Apportioned UN WPP 2024 pop (sex-specific on `female`/`male` rows; total on `both` rows) |
 | `clean_fuel_share` | `float` | `[0.0, 1.0]` | Assumed/projected clean-fuel coverage |
 | `model_name` | `str` | e.g., `hist_gbdt_panel`, `poisson_apc`, `mock_generator` | Best validated Stage 2 model |
 | `is_mock` | `bool` | `true` or `false` | Must be `false` for final results |
@@ -113,11 +113,38 @@ NPL_rural,2040,both,bau,DALYs,Number,0.0,0.0,0.0,1.0,0.40,mock_generator,true,MO
   }
 }
 ```
-*(In `*_mock.json`, Aanya populates clearly labelled placeholder numerical parameters derived from `docs/ASSUMPTIONS.md`—paired with Rudraksh's schema validator—so evaluator math executes cleanly before Stage 2 finishes.)*
+*(In `*_mock.json`, Aanya populates clearly labelled placeholder numerical parameters derived from `docs/ASSUMPTIONS.md`—paired with `src/data/contracts.py`—so evaluator math executes cleanly before Stage 2 finishes.)*
+
+### Surrogate Mathematical Specification (`log_linear`)
+Let $\Delta c_u \ge 0$ be the effective additional clean-cooking coverage above unit $u$'s 2040 BAU clean-fuel baseline (`baseline_clean_fuel`, matching `clean_fuel_share` at `year = 2040, scenario = bau`), capped so $c_{u,2040} \le 1.0$. With $\beta_u = \text{slope\_clean\_fuel}_u \le 0$ and $r_{f/m,u} = \text{sex\_elasticity\_ratio\_f\_to\_m}_u > 0$:
+- **Sex-specific burden multipliers:**
+  $$M_{u,\text{male}} = \exp(\beta_u \cdot \Delta c_u), \qquad M_{u,\text{female}} = \exp(r_{f/m,u} \cdot \beta_u \cdot \Delta c_u)$$
+- **Mean 2040 projections:**
+  $$\text{DALYs}_{u,s,2040}(x) = M_{u,s} \cdot \text{bau\_dalys\_2040}_{u,s}, \qquad \text{ASR}_{u,s,2040}(x) = M_{u,s} \cdot \text{bau\_asr\_2040}_{u,s}$$
+  for $s \in \{\text{female}, \text{male}\}$, so $x = 0$ ($\Delta c_u = 0$) recovers exact 2040 BAU DALYs and ASRs.
+- **Simplified 95% UI propagation:** Scale the 2040 BAU half-widths by $M_{u,s}$ and combine in quadrature with the surrogate uncertainty contribution $\delta_{u,s} = \text{mean}_{u,s} \cdot (1.96 \cdot \text{uncertainty\_sd}_u \cdot \Delta c_u)$:
+  $$\text{lower}_{u,s} = \max\Big(0,\; \text{mean}_{u,s} - \sqrt{\big(M_{u,s}(\text{bau\_val}_{u,s} - \text{bau\_lower}_{u,s})\big)^2 + \delta_{u,s}^2}\Big)$$
+  $$\text{upper}_{u,s} = \text{mean}_{u,s} + \sqrt{\big(M_{u,s}(\text{bau\_upper}_{u,s} - \text{bau\_val}_{u,s})\big)^2 + \delta_{u,s}^2}$$
+  At $\Delta c_u = 0$, this preserves the exact 2040 BAU `(lower, val, upper)` bounds.
 
 ---
 
-## 5. Temporary Mock Strategy Rules
-1. `configs/default.yaml` controls `interfaces.use_mock_forecasts`. When `true`, Stage 3 and Planning automatically read `*_mock.*` files and stamp all outputs with `WARNING_MOCK_INPUTS: true` so mock runs can never be confused with final results.
-2. Day-1 mock files are deterministic (seeded via `seeds.global`), lightweight (<50 KB), and committed under the explicit `!data/processed/*_mock.*` `.gitignore` exception.
-3. At the Handoff Checkpoint, Person A runs `src/forecast/export_contracts.py` to generate real contracts and verifies schema parity using the shared contract test suite (`tests/`).
+## 5. Contract 4: Intervention & Scenario Parameters (Person B Owned)
+- **Production file (template until sourced):** `configs/intervention_params.json` (`is_mock: false`; parameter values remain `null` / `"TODO(owner)"` until literature values are logged in `docs/ASSUMPTIONS.md`).
+- **Day-1 Mock file:** `data/processed/intervention_params_mock.json` (`is_mock: true`; synthetic placeholder values only).
+- **Owner:** Person B (does not alter Person A's Contracts 1–3).
+- **Required JSON Keys:**
+  - Metadata: `schema_version` (`"1.0"`), `is_mock` (`bool`), `data_version` (`str`), `generated_at` (`ISO-8601 UTC`), `note` (`str`).
+  - Global Stage 3 settings: `total_budget_usd_millions` (`float > 0`), `infra_build_threshold` (`float in (0, 1]`, e.g. `0.5`), `apply_cost_discounting` (`bool`, default `false`), `discount_factor` (`float in (0, 1]`, e.g. `0.774`), `period_order` (`["P1", "P2", "P3"]`).
+  - Per-unit/intervention maps over `["IND_urban", "IND_rural", "NPL_urban", "NPL_rural"]`:
+    - `coverage_ceiling`: `{unit: float in (0, 1]}` ($c^{\max}_u$).
+    - `effectiveness`: `{unit: {lpg_subsidy: 1.0, improved_biomass: float in (0, 1), electric_induction: 1.0, infra_lpg_grid: 0.0}}`.
+    - `unit_costs_usd_millions`: `{unit: {intervention: float >= 0}}` (for cooking interventions: USD millions per `1.0` full-unit coverage increment; for `infra_lpg_grid`: fixed USD millions per build indicator `x >= infra_build_threshold`).
+    - `max_adoption_per_period`: `{unit: {intervention: {P1: float, P2: float, P3: float}}}` in `[0, 1]`.
+
+---
+
+## 6. Temporary Mock Strategy Rules
+1. `configs/default.yaml` controls `interfaces.use_mock_forecasts`. When `true`, Stage 3 and Planning automatically read `*_mock.*` files and stamp all outputs with `is_mock: true` / `WARNING_MOCK_INPUTS: true` so mock runs can never be confused with final results.
+2. Day-1 mock files are deterministic (seeded via `seeds.global`), lightweight (`<500 KB`, covering ~960 rows / ~80 KB for milestone-anchor counterfactuals + annual BAU, or ~3,840 rows / ~300 KB if all years are expanded), and committed under the explicit `!data/processed/*_mock.*` `.gitignore` exception.
+3. At the Handoff Checkpoint, Person A runs `src/forecast/export_contracts.py` to generate real Contracts 1–3 and verifies schema parity using the shared contract test suite (`tests/`).

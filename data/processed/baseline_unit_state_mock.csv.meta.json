@@ -1,0 +1,9 @@
+{
+  "file": "baseline_unit_state_mock.csv",
+  "is_mock": true,
+  "data_version": "MOCK_V1",
+  "generated_at": "2026-01-01T00:00:00Z",
+  "seed": 42,
+  "row_count": 4,
+  "warning": "SYNTHETIC MOCK DATA \u2014 PLACEHOLDER VALUES FOR PIPELINE TESTING ONLY; DO NOT CITE."
+}
