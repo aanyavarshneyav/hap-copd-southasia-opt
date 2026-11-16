@@ -1,0 +1,17 @@
+unit,intervention,households_2025_derived,usd_per_hh_low,usd_per_hh_central,usd_per_hh_high,usd_millions_low,usd_millions_central,usd_millions_high,effectiveness_central,coverage_ceiling,cap_P1,cap_P2,cap_P3,status,note
+IND_urban,lpg_subsidy,124390773,78.26,96.18,185.78,9734.28,11963.51,23109.64,0.88,0.99,0.05,0.05,0.05,derived_from_sourced_components,Public fiscal subsidy (2024 USD). param_audit 83.56/133.70 FX gives $11983.55M.
+IND_urban,improved_biomass,124390773,25.0,45.0,85.0,3109.77,5597.58,10573.22,0.25,0.99,0.2,0.2,0.2,derived_mixed_boundary,"Societal hardware+O&M ($25-$85/HH/5yr). Eta=0.25 IER-adjusted COPD PAF midpoint [0.15, 0.30] (raw PM2.5=0.32-0.41)."
+IND_urban,electric_induction,124390773,22.7,53.11,83.51,2823.67,6606.39,10387.87,0.92,0.99,0.1,0.15,0.15,derived_hardware_only_gap,Hardware+internal wiring only (no India central subsidy; excl. 5-yr electricity tariff).
+IND_urban,infra_lpg_grid,124390773,,,,,,,0.0,0.99,1.0,1.0,1.0,unresolved_gap,No primary regional clean-cooking transformer+LPG depot fixed $M capex; left null.
+IND_rural,lpg_subsidy,209205395,78.26,96.18,185.78,16371.51,20120.71,38866.71,0.78,0.95,0.24,0.24,0.2,derived_from_sourced_components,Public fiscal subsidy (2024 USD). param_audit 83.56/133.70 FX gives $20154.42M.
+IND_rural,improved_biomass,209205395,25.0,45.0,85.0,5230.13,9414.24,17782.46,0.25,0.95,0.2,0.2,0.2,derived_mixed_boundary,"Societal hardware+O&M ($25-$85/HH/5yr). Eta=0.25 IER-adjusted COPD PAF midpoint [0.15, 0.30] (raw PM2.5=0.32-0.41)."
+IND_rural,electric_induction,209205395,22.7,53.11,101.43,4748.96,11110.9,21219.7,0.85,0.95,0.1,0.15,0.15,derived_hardware_only_gap,Hardware+internal wiring only (no India central subsidy; excl. 5-yr electricity tariff).
+IND_rural,infra_lpg_grid,209205395,,,,,,,0.0,0.95,1.0,1.0,1.0,unresolved_gap,No primary regional clean-cooking transformer+LPG depot fixed $M capex; left null.
+NPL_urban,lpg_subsidy,4606688,93.16,119.85,282.55,429.18,552.11,1301.61,0.86,0.98,0.15,0.15,0.15,derived_from_sourced_components,Public fiscal subsidy (2024 USD). param_audit 83.56/133.70 FX gives $551.29M.
+NPL_urban,improved_biomass,4606688,25.0,45.0,85.0,115.17,207.3,391.57,0.25,0.98,0.2,0.2,0.2,derived_mixed_boundary,"Societal hardware+O&M ($25-$85/HH/5yr). Eta=0.25 IER-adjusted COPD PAF midpoint [0.15, 0.30] (raw PM2.5=0.32-0.41)."
+NPL_urban,electric_induction,4606688,37.45,63.67,89.89,172.52,293.31,414.1,0.9,0.98,0.1,0.15,0.15,derived_hardware_only_gap,Hardware+internal wiring only (no India central subsidy; excl. 5-yr electricity tariff).
+NPL_urban,infra_lpg_grid,4606688,,,,,,,0.0,0.98,1.0,1.0,1.0,unresolved_gap,No primary regional clean-cooking transformer+LPG depot fixed $M capex; left null.
+NPL_rural,lpg_subsidy,2166519,108.15,134.83,297.53,234.3,292.11,644.6,0.78,0.95,0.1,0.15,0.15,derived_from_sourced_components,Public fiscal subsidy (2024 USD). param_audit 83.56/133.70 FX gives $291.68M.
+NPL_rural,improved_biomass,2166519,25.0,45.0,85.0,54.16,97.49,184.15,0.25,0.95,0.2,0.2,0.2,derived_mixed_boundary,"Societal hardware+O&M ($25-$85/HH/5yr). Eta=0.25 IER-adjusted COPD PAF midpoint [0.15, 0.30] (raw PM2.5=0.32-0.41)."
+NPL_rural,electric_induction,2166519,37.45,63.67,89.89,81.14,137.94,194.75,0.85,0.95,0.1,0.15,0.15,derived_hardware_only_gap,Hardware+internal wiring only (no India central subsidy; excl. 5-yr electricity tariff).
+NPL_rural,infra_lpg_grid,2166519,,,,,,,0.0,0.95,1.0,1.0,1.0,unresolved_gap,No primary regional clean-cooking transformer+LPG depot fixed $M capex; left null.
