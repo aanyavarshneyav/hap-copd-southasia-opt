@@ -1,0 +1,116 @@
+{
+  "manifest_version": "1.0",
+  "last_updated": "2026-11-16T19:50:56.875154+00:00",
+  "files": {
+    "IHME-GBD_2023_DATA-010d0c57-1.zip": {
+      "source": "IHME GBD 2023 Results Tool",
+      "url_or_tool": "https://vizhub.healthdata.org/gbd-results/",
+      "download_date": "2026-11-16",
+      "version": "GBD_2023",
+      "role": "Primary historical HAP-attributable COPD burden outcome (1990-2023)",
+      "sha256": "03c1f56d84f796477e36ba3f45827f580c517dcace64fbe4f33642d7020b74ed",
+      "size_bytes": 198204,
+      "row_count": 5440
+    },
+    "IHME-GBD_2023_DATA-7546b8be-1.zip": {
+      "source": "IHME GBD 2023 Results Tool",
+      "url_or_tool": "https://vizhub.healthdata.org/gbd-results/",
+      "download_date": "2026-11-16",
+      "version": "GBD_2023",
+      "role": "Total COPD denominator for attributable share (1990-2023)",
+      "sha256": "b5506d90d81500e0af0984cbd8f77ee71f9bdf103810bbcf2098d7dc7d4cbf20",
+      "size_bytes": 79214,
+      "row_count": 2176
+    },
+    "IHME-GBD_2023_DATA-89044603-1.zip": {
+      "source": "IHME GBD 2023 Results Tool",
+      "url_or_tool": "https://vizhub.healthdata.org/gbd-results/",
+      "download_date": "2026-11-16",
+      "version": "GBD_2023",
+      "role": "HAP all-cause burden context (1990-2023)",
+      "sha256": "a141e8502e0aebe70ba8e8c476f04e7c4cf7e12789bd867ad9008cca86264cf7",
+      "size_bytes": 67411,
+      "row_count": 1836
+    },
+    "data (1).csv": {
+      "source": "WHO Global Health Observatory / Household Energy Database",
+      "url_or_tool": "https://www.who.int/data/gho/data/themes/air-pollution/household-air-pollution",
+      "download_date": "2026-11-16",
+      "version": "WHO_GHO_2024",
+      "role": "WHO SDG 7.1.2 clean fuel access & fuel category proportions (1990-2023)",
+      "sha256": "efb45424ddd405c172d7b20465fd293626adabec0fb667bf72142b8d72b18db9",
+      "size_bytes": 71728931,
+      "row_count": 195840
+    },
+    "data (2).csv": {
+      "source": "WHO Global Health Estimates (GHE)",
+      "url_or_tool": "https://www.who.int/data/gho/data/themes/mortality-and-global-health-estimates",
+      "download_date": "2026-11-16",
+      "version": "WHO_GHE_2021",
+      "role": "WHO GHE 2021 empirical HAP-COPD DALYs by sex (Female, Male, Both)",
+      "sha256": "34b02c72c43ee576b63c9d778752f6311c09b57b8a185211ee777b9f0e6edd5b",
+      "size_bytes": 7683,
+      "row_count": 24
+    },
+    "data (3).csv": {
+      "source": "WHO Global Health Estimates (GHE)",
+      "url_or_tool": "https://www.who.int/data/gho/data/themes/mortality-and-global-health-estimates",
+      "download_date": "2026-11-16",
+      "version": "WHO_GHE_2021",
+      "role": "WHO GHE 2021 empirical HAP-all cause deaths by sex (Female, Male, Both)",
+      "sha256": "a47c2ccbb9658ff4911ad6281777963c5b320c805293f282e543216574311650",
+      "size_bytes": 6842,
+      "row_count": 24
+    },
+    "EG.CFT.ACCS.json": {
+      "source": "World Bank Open Data API",
+      "url_or_tool": "https://api.worldbank.org/v2/country/indicator/EG.CFT.ACCS.ZS",
+      "download_date": "2026-11-16",
+      "version": "WDI_2024",
+      "role": "Access to clean fuels and technologies for cooking (% of population)",
+      "sha256": "46fd7cea5b6097c128761703d18df016ce08eded717760f74167aedd216f2e52",
+      "size_bytes": 129974,
+      "row_count": 528
+    },
+    "EG.CFT.ACCS.RU.json": {
+      "source": "World Bank Open Data API",
+      "url_or_tool": "https://api.worldbank.org/v2/country/indicator/EG.CFT.ACCS.RU.ZS",
+      "download_date": "2026-11-16",
+      "version": "WDI_2024",
+      "role": "Access to clean fuels and technologies for cooking, rural (% of rural pop)",
+      "sha256": "a2ae11b143767289e395d25d4fc3b40b1cc63392f85e1247b35c5d3f315ba4f3",
+      "size_bytes": 138375,
+      "row_count": 528
+    },
+    "EG.CFT.ACCS.UR.json": {
+      "source": "World Bank Open Data API",
+      "url_or_tool": "https://api.worldbank.org/v2/country/indicator/EG.CFT.ACCS.UR.ZS",
+      "download_date": "2026-11-16",
+      "version": "WDI_2024",
+      "role": "Access to clean fuels and technologies for cooking, urban (% of urban pop)",
+      "sha256": "e4f6c9c42f43e7007cd2b609685d768e0898ab8bb592b3596f9a8fd2bd9e69aa",
+      "size_bytes": 138439,
+      "row_count": 528
+    },
+    "WPP2024_PopulationBySingleAgeSex_Medium_1950-2023.csv/WPP2024_PopulationBySingleAgeSex_Medium_1950-2023.csv": {
+      "source": "UN DESA Population Division",
+      "url_or_tool": "https://population.un.org/wpp/Download/Standard/CSV/",
+      "download_date": "2026-11-16",
+      "version": "WPP_2024",
+      "role": "UN WPP 2024 population estimates by single age & sex (1950-2023)",
+      "sha256": "9e23aa12cfb8d4090cc0fc19b2d05cdc0df561142a55a3d8971c2d07578a55f6",
+      "size_bytes": 418121725,
+      "row_count": 4148070
+    },
+    "WPP2024_PopulationBySingleAgeSex_Medium_2024-2100.csv/WPP2024_PopulationBySingleAgeSex_Medium_2024-2100.csv": {
+      "source": "UN DESA Population Division",
+      "url_or_tool": "https://population.un.org/wpp/Download/Standard/CSV/",
+      "download_date": "2026-11-16",
+      "version": "WPP_2024",
+      "role": "UN WPP 2024 population medium-variant projections by single age & sex (2024-2100)",
+      "sha256": "b6ed024941d5a045bf25a350e1cfed0ec8949e2357111167c98ab9d846bc755f",
+      "size_bytes": 440981531,
+      "row_count": 4316235
+    }
+  }
+}
