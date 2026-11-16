@@ -772,3 +772,307 @@ def plot_htn_tree(
     fig.tight_layout(rect=[0.0, 0.02, 1.0, 0.96])
     _apply_mock_watermark(fig, is_mock, data_version)
     return _save_figure(fig, out_path)
+
+
+def plot_comp_distributions(
+    rollout_map: dict[str, pd.DataFrame],
+    comp_df: pd.DataFrame,
+    out_path: Path,
+    *,
+    is_mock: bool,
+    data_version: str,
+) -> Path:
+    """Plot rollout outcome distributions (violin/box) and low-uptake adaptive contrast."""
+    _configure_style()
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14.2, 5.6))
+
+    # Core comparable methods (MDP b=6/11, GA matched/knee/daly_min/cost_min, PDDL)
+    ordered_keys = [
+        k for k in rollout_map if not k.startswith("ga_pareto_s") and k != "ga_equity_minimal"
+    ]
+    if not ordered_keys:
+        ordered_keys = list(rollout_map.keys())
+
+    short_labels = [
+        k.replace("ga_matched_best ", "GA best\n")
+        .replace("mdp_adaptive_", "MDP ")
+        .replace("pddl_classical_plan", "PDDL")
+        .replace("ga_", "GA ")
+        for k in ordered_keys
+    ]
+
+    dalys_data = [
+        rollout_map[k]["dalys_2040_mean"].to_numpy(dtype=float) / 1e6 for k in ordered_keys
+    ]
+
+    parts = ax1.violinplot(dalys_data, showmeans=True, showextrema=False, widths=0.7)
+    colors = [
+        "#0072B2" if k.startswith("mdp_") else ("#CC79A7" if k.startswith("pddl_") else "#E69F00")
+        for k in ordered_keys
+    ]
+    for body, col in zip(parts["bodies"], colors, strict=True):
+        body.set_facecolor(col)
+        body.set_alpha(0.65)
+        body.set_edgecolor("#1F2937")
+    ax1.boxplot(
+        dalys_data,
+        widths=0.22,
+        patch_artist=False,
+        medianprops={"color": "#111827", "linewidth": 1.6},
+        whiskerprops={"color": "#374151"},
+        capprops={"color": "#374151"},
+        showfliers=False,
+    )
+    ax1.set_xticks(np.arange(1, len(ordered_keys) + 1))
+    ax1.set_xticklabels(short_labels, rotation=18, ha="right", fontsize=8.5)
+    ax1.set_ylabel("Realized 2040 COPD DALYs (millions)")
+    ax1.set_title("A. 2040 Burden Distribution Across N=1,000 Shocks")
+
+    # Panel B: Scalarized return all rollouts vs P1 low-uptake shocks
+    sub = comp_df[comp_df["method"].isin(ordered_keys)].copy()
+    sub = sub.set_index("method").loc[ordered_keys].reset_index()
+    x_pos = np.arange(len(ordered_keys), dtype=float)
+    w = 0.36
+    all_ret = sub["mean_scalarized_value"].to_numpy(dtype=float) / 1e3
+    low_ret = sub["mean_scalarized_low_p1"].to_numpy(dtype=float) / 1e3
+    ax2.bar(x_pos - w / 2, all_ret, width=w, color="#0072B2", alpha=0.88, label="All rollouts")
+    ax2.bar(
+        x_pos + w / 2,
+        low_ret,
+        width=w,
+        color="#D55E00",
+        alpha=0.88,
+        label="Low-uptake P1 shock (p=0.15)",
+    )
+    ax2.axhline(0.0, color="#374151", linewidth=0.9)
+    ax2.set_xticks(x_pos)
+    ax2.set_xticklabels(short_labels, rotation=18, ha="right", fontsize=8.5)
+    ax2.set_ylabel("Mean Scalarized Value (thousands)")
+    ax2.set_title("B. Expected Value vs. Low-Uptake Shock Resilience")
+    ax2.legend(loc="lower right", frameon=True, framealpha=0.92)
+
+    title_prefix = "[SYNTHETIC MOCK] " if is_mock else ""
+    fig.suptitle(
+        f"{title_prefix}Equal-Footing Stochastic Rollout Comparison (GA vs. MDP vs. PDDL)",
+        fontsize=12.5,
+        fontweight="bold",
+        y=0.99,
+    )
+    fig.tight_layout(rect=[0.0, 0.02, 1.0, 0.94])
+    _apply_mock_watermark(fig, is_mock, data_version)
+    return _save_figure(fig, out_path)
+
+
+def plot_comp_tradeoffs(
+    pareto_df: pd.DataFrame,
+    comp_df: pd.DataFrame,
+    sens_df: pd.DataFrame,
+    out_path: Path,
+    *,
+    is_mock: bool,
+    data_version: str,
+) -> Path:
+    """Plot NSGA-II Pareto front overlaid with stochastic MDP, GA, and PDDL outcomes."""
+    _configure_style()
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13.6, 5.4))
+
+    # Background deterministic NSGA-II front
+    ax1.scatter(
+        pareto_df["total_cost_usd_millions"],
+        pareto_df["dalys_2040_mean"] / 1e6,
+        color="#CBD5E1",
+        s=22,
+        label="NSGA-II Pareto front (nominal)",
+        zorder=1,
+    )
+    ax2.scatter(
+        pareto_df["dalys_2040_mean"] / 1e6,
+        pareto_df["equity_gap_asr"],
+        color="#CBD5E1",
+        s=22,
+        label="NSGA-II Pareto front (nominal)",
+        zorder=1,
+    )
+
+    for _, row in comp_df.iterrows():
+        method = str(row["method"])
+        if method.startswith("ga_pareto_s"):
+            continue
+        cost = float(row["mean_cost_usd_millions"])
+        dalys_m = float(row["mean_dalys_2040"]) / 1e6
+        lo_m = dalys_m - float(row["p05_dalys_2040"]) / 1e6
+        hi_m = float(row["p95_dalys_2040"]) / 1e6 - dalys_m
+        eq = float(row["mean_equity_gap_asr"])
+
+        if method.startswith("mdp_"):
+            col, mk, sz = ("#0072B2" if "b6" in method else "#009E73"), "*", 190
+            lbl = "MDP adaptive (b=6)" if "b6" in method else "MDP adaptive (b=11)"
+        elif method.startswith("pddl_"):
+            col, mk, sz = "#CC79A7", "P", 135
+            lbl = "PDDL classical plan"
+        elif method.startswith("ga_matched_best"):
+            col, mk, sz = "#D55E00", "D", 105
+            lbl = "GA best scalarized"
+        else:
+            col, mk, sz = "#E69F00", "o", 70
+            lbl = method.replace("ga_", "GA ")
+
+        ax1.errorbar(
+            [cost],
+            [dalys_m],
+            yerr=[[lo_m], [hi_m]],
+            fmt="none",
+            ecolor=col,
+            elinewidth=1.2,
+            capsize=3,
+            alpha=0.75,
+            zorder=3,
+        )
+        ax1.scatter(
+            [cost], [dalys_m], color=col, marker=mk, s=sz, edgecolors="black", label=lbl, zorder=4
+        )
+        ax2.scatter(
+            [dalys_m], [eq], color=col, marker=mk, s=sz, edgecolors="black", label=lbl, zorder=4
+        )
+
+    # Overlay MDP lambda_eq > 0 trajectory at gamma=0.774, budget_bins=11 (or max available)
+    max_b = int(sens_df["budget_bins"].max())
+    eq_sweep = sens_df[
+        (sens_df["budget_bins"] == max_b) & (np.isclose(sens_df["discount_factor"], 0.774))
+    ]
+    if len(eq_sweep) > 1:
+        eq_s = eq_sweep.sort_values("equity_weight_lambda")
+        ax2.plot(
+            eq_s["mean_dalys_2040"] / 1e6,
+            eq_s["mean_equity_gap_asr"],
+            color="#009E73",
+            linestyle="--",
+            linewidth=1.6,
+            marker="^",
+            markersize=6,
+            label=f"MDP λ_eq sweep (b={max_b})",
+            zorder=5,
+        )
+
+    ax1.set_xlabel("Mean Programme Cost (USD millions)")
+    ax1.set_ylabel("Mean 2040 COPD DALYs (millions, 5th–95th pct)")
+    ax1.set_title("A. Cost vs. Stochastic 2040 Burden")
+    ax1.legend(loc="upper right", fontsize=7.6, frameon=True, framealpha=0.92)
+
+    ax2.set_xlabel("Mean 2040 COPD DALYs (millions)")
+    ax2.set_ylabel("Mean Female–Male ASR Gap (per 100k)")
+    ax2.set_title("B. Burden vs. Equity Trade-off (incl. MDP λ_eq Sweep)")
+    ax2.legend(loc="upper left", fontsize=7.6, frameon=True, framealpha=0.92)
+
+    title_prefix = "[SYNTHETIC MOCK] " if is_mock else ""
+    fig.suptitle(
+        f"{title_prefix}MDP vs. NSGA-II vs. PDDL Objective-Space Comparison",
+        fontsize=12.5,
+        fontweight="bold",
+        y=0.99,
+    )
+    fig.tight_layout(rect=[0.0, 0.02, 1.0, 0.94])
+    _apply_mock_watermark(fig, is_mock, data_version)
+    return _save_figure(fig, out_path)
+
+
+def plot_comp_sensitivity(
+    sens_df: pd.DataFrame,
+    pareto_df: pd.DataFrame,
+    comp_df: pd.DataFrame,
+    out_path: Path,
+    *,
+    is_mock: bool,
+    data_version: str,
+) -> Path:
+    """Plot sensitivity across budget_bins (6 vs 11), lambda_eq, and discount factor."""
+    _configure_style()
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15.5, 4.9))
+
+    # Panel A: budget_bins 6 vs 11 at lambda_eq = 0
+    sub_b = sens_df[np.isclose(sens_df["equity_weight_lambda"], 0.0)].copy()
+    for gamma_val, col in ((0.774, "#0072B2"), (1.0, "#D55E00")):
+        g_sub = sub_b[np.isclose(sub_b["discount_factor"], gamma_val)].sort_values("budget_bins")
+        ax1.plot(
+            g_sub["budget_bins"],
+            g_sub["sim_mean_scalarized_return"] / 1e3,
+            marker="o",
+            linewidth=2.0,
+            color=col,
+            label=f"MDP γ={gamma_val:.3f}",
+        )
+    ga_best = comp_df[comp_df["method"].str.startswith("ga_matched_best")]
+    if not ga_best.empty:
+        ga_val = float(ga_best["mean_scalarized_value"].iloc[0]) / 1e3
+        ax1.axhline(
+            ga_val, color="#009E73", linestyle="--", linewidth=1.6, label="GA matched (γ=0.774)"
+        )
+    ax1.set_xticks(sorted(sub_b["budget_bins"].unique()))
+    ax1.set_xlabel("MDP Budget Discretization (budget_bins)")
+    ax1.set_ylabel("Mean Scalarized Return (thousands)")
+    ax1.set_title("A. Discretization: budget_bins 6 vs. 11")
+    ax1.legend(loc="best", fontsize=8, frameon=True)
+
+    # Panel B: lambda_eq > 0 sweep at gamma=0.774
+    sub_eq = sens_df[np.isclose(sens_df["discount_factor"], 0.774)].copy()
+    for b_bins, col in ((6, "#0072B2"), (11, "#009E73")):
+        b_sub = sub_eq[sub_eq["budget_bins"] == b_bins].sort_values("equity_weight_lambda")
+        if b_sub.empty:
+            continue
+        ax2.plot(
+            b_sub["equity_weight_lambda"] / 1e3,
+            b_sub["mean_equity_gap_asr"],
+            marker="s",
+            linewidth=2.0,
+            color=col,
+            label=f"MDP b={b_bins}",
+        )
+    ax2.set_xlabel("Equity Weight λ_eq (thousands)")
+    ax2.set_ylabel("Mean Female–Male ASR Gap (per 100k)")
+    ax2.set_title("B. Equity Weight λ_eq Sensitivity (γ=0.774)")
+    ax2.legend(loc="best", fontsize=8, frameon=True)
+
+    # Panel C: Discount factor 0.774 vs 1.0 (DALYs averted & cost at lambda_eq=0)
+    sub_g = sub_b.copy()
+    labels_g = [
+        f"b={int(r['budget_bins'])}, γ={r['discount_factor']:.3f}" for _, r in sub_g.iterrows()
+    ]
+    x_g = np.arange(len(sub_g), dtype=float)
+    w = 0.36
+    ax3_r = ax3.twinx()
+    ax3_r.spines["top"].set_visible(False)
+    ax3.bar(
+        x_g - w / 2,
+        sub_g["mean_dalys_averted"].to_numpy(dtype=float) / 1e6,
+        width=w,
+        color="#0072B2",
+        alpha=0.85,
+        label="DALYs averted (M)",
+    )
+    ax3_r.bar(
+        x_g + w / 2,
+        sub_g["mean_cost_usd_millions"].to_numpy(dtype=float),
+        width=w,
+        color="#E69F00",
+        alpha=0.85,
+        label="Mean Cost ($M)",
+    )
+    ax3.set_xticks(x_g)
+    ax3.set_xticklabels(labels_g, rotation=18, ha="right", fontsize=8)
+    ax3.set_ylabel("Mean 2040 DALYs Averted (M)")
+    ax3_r.set_ylabel("Mean Cost (USD M)")
+    ax3.set_title("C. Discount Factor γ=0.774 vs. 1.0")
+    h1, l1 = ax3.get_legend_handles_labels()
+    h2, l2 = ax3_r.get_legend_handles_labels()
+    ax3.legend(h1 + h2, l1 + l2, loc="upper left", fontsize=7.6, frameon=True)
+
+    title_prefix = "[SYNTHETIC MOCK] " if is_mock else ""
+    fig.suptitle(
+        f"{title_prefix}MDP Sensitivity: Budget Bins, Equity Weight λ_eq, and Discounting",
+        fontsize=12.5,
+        fontweight="bold",
+        y=0.99,
+    )
+    fig.tight_layout(rect=[0.0, 0.02, 1.0, 0.93])
+    _apply_mock_watermark(fig, is_mock, data_version)
+    return _save_figure(fig, out_path)

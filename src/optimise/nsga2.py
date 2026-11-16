@@ -125,7 +125,7 @@ def repair_decision_vectors(
        latest-period / highest-cost infra builds until infra cost fits budget.
     4. Zero out ``lpg_subsidy`` and ``electric_induction`` in periods where
        infrastructure is not yet ready (initial readiness or ``infra_lpg_grid`` built
-       in same or earlier period).
+       in a strictly earlier period ``q < p``).
     5. Proportionally scale down per-unit cooking allocations exceeding unit
        ``coverage_ceiling`` headroom.
     6. Optionally scale down cooking allocations when ``total_cost > total_budget``.
@@ -180,10 +180,13 @@ def repair_decision_vectors(
                 infra_built[row_idx, u_idx, p_idx] = 0.0
                 running -= slot_cost
 
-    # 4. Enforce data-driven infrastructure prerequisites
+    # 4. Enforce data-driven infrastructure prerequisites (strictly earlier period q < p)
     cum_built = np.maximum.accumulate(infra_built, axis=2)
-    lpg_ready = np.maximum(evaluator._lpg_infra_init[np.newaxis, :, np.newaxis], cum_built)
-    grid_ready = np.maximum(evaluator._grid_ready_init[np.newaxis, :, np.newaxis], cum_built)
+    earlier_built = np.zeros_like(cum_built)
+    if evaluator.n_periods > 1:
+        earlier_built[:, :, 1:] = cum_built[:, :, :-1]
+    lpg_ready = np.maximum(evaluator._lpg_infra_init[np.newaxis, :, np.newaxis], earlier_built)
+    grid_ready = np.maximum(evaluator._grid_ready_init[np.newaxis, :, np.newaxis], earlier_built)
     tensor[:, :, evaluator._idx_lpg, :] *= lpg_ready
     tensor[:, :, evaluator._idx_elec, :] *= grid_ready
 

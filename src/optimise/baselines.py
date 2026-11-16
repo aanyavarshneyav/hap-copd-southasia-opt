@@ -96,11 +96,14 @@ def run_proportional_equal_split(
             tensor[u_idx, infra_idx, 0] = evaluator.infra_build_threshold
             infra_spent += build_cost
 
-    # 2. Identify ready status per (u, cook_i, p)
+    # 2. Identify ready status per (u, cook_i, p) using strictly earlier infra (q < p)
     infra_built = (tensor[:, infra_idx, :] >= evaluator.infra_build_threshold).astype(float)
     cum_built = np.maximum.accumulate(infra_built, axis=1)
-    lpg_ready = np.maximum(evaluator._lpg_infra_init[:, np.newaxis], cum_built)
-    grid_ready = np.maximum(evaluator._grid_ready_init[:, np.newaxis], cum_built)
+    earlier_built = np.zeros_like(cum_built)
+    if evaluator.n_periods > 1:
+        earlier_built[:, 1:] = cum_built[:, :-1]
+    lpg_ready = np.maximum(evaluator._lpg_infra_init[:, np.newaxis], earlier_built)
+    grid_ready = np.maximum(evaluator._grid_ready_init[:, np.newaxis], earlier_built)
 
     allow_mask = np.ones((evaluator.n_units, len(cook_idx), evaluator.n_periods), dtype=bool)
     lpg_pos = int(np.flatnonzero(cook_idx == evaluator._idx_lpg)[0])
@@ -191,8 +194,11 @@ def run_greedy_dalys_per_dollar(
     while True:
         infra_built = (tensor[:, infra_idx, :] >= evaluator.infra_build_threshold).astype(float)
         cum_built = np.maximum.accumulate(infra_built, axis=1)
-        lpg_ready = np.maximum(evaluator._lpg_infra_init[:, np.newaxis], cum_built)
-        grid_ready = np.maximum(evaluator._grid_ready_init[:, np.newaxis], cum_built)
+        earlier_built = np.zeros_like(cum_built)
+        if evaluator.n_periods > 1:
+            earlier_built[:, 1:] = cum_built[:, :-1]
+        lpg_ready = np.maximum(evaluator._lpg_infra_init[:, np.newaxis], earlier_built)
+        grid_ready = np.maximum(evaluator._grid_ready_init[:, np.newaxis], earlier_built)
 
         candidates: list[np.ndarray] = []
         for u_idx in range(evaluator.n_units):
@@ -214,8 +220,13 @@ def run_greedy_dalys_per_dollar(
                     needs_infra = (
                         i_idx == evaluator._idx_lpg and lpg_ready[u_idx, p_idx] < 1.0
                     ) or (i_idx == evaluator._idx_elec and grid_ready[u_idx, p_idx] < 1.0)
+                    if needs_infra and p_idx == 0:
+                        continue
+                    infra_p_idx = p_idx - 1
                     infra_delta_cost = (
-                        float(evaluator._infra_costs[u_idx] * disc[p_idx]) if needs_infra else 0.0
+                        float(evaluator._infra_costs[u_idx] * disc[infra_p_idx])
+                        if needs_infra
+                        else 0.0
                     )
                     slot_unit_cost = unit_cost_i * float(disc[p_idx])
                     rem_budget = max(
@@ -232,7 +243,7 @@ def run_greedy_dalys_per_dollar(
                     cand = tensor.copy()
                     cand[u_idx, i_idx, p_idx] += delta
                     if needs_infra:
-                        cand[u_idx, infra_idx, p_idx] = evaluator.infra_build_threshold
+                        cand[u_idx, infra_idx, infra_p_idx] = evaluator.infra_build_threshold
                     candidates.append(cand.reshape(-1))
 
         if not candidates:

@@ -1,4 +1,4 @@
-.PHONY: help setup lint format test check mock-data validate-data stage1 stage2 stage3 mdp planning all clean
+.PHONY: help setup lint format test check mock-data validate-data stage1 stage2 stage3 mdp planning compare all clean
 
 PYTHON := python3.12
 VENV := .venv
@@ -19,6 +19,7 @@ help:
 	@echo "  make stage3         [Phase 3+] Run Stage 3 NSGA-II optimisation"
 	@echo "  make mdp            [Phase 3+] Run Stage 4 custom NumPy MDP value iteration"
 	@echo "  make planning       [Phase 3+] Run MDP, HTN, and PDDL (pyperplan) pipeline"
+	@echo "  make compare        [Phase 4+] Run equal-footing GA vs MDP vs PDDL comparison"
 	@echo "  make all            [Phase 3+] Run full reproducible pipeline"
 	@echo "  make clean          Remove caches and temporary build artifacts"
 
@@ -60,7 +61,10 @@ mdp:
 planning:
 	$(BIN)/python -m src.planning.run --config $(CONFIG)
 
-all: validate-data stage1 stage2 stage3 planning
+compare:
+	$(BIN)/python -m src.planning.compare --config $(CONFIG)
+
+all: validate-data stage1 stage2 stage3 planning compare
 
 clean:
 	rm -rf .pytest_cache .ruff_cache build dist *.egg-info

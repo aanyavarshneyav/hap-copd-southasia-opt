@@ -112,6 +112,7 @@ class PeriodTransitions:
     cost: np.ndarray  # float64 (E,)
     next_state: np.ndarray  # int32 (E, 3)
     dalys_averted: np.ndarray  # float64 (E, 3)
+    equity_gap_reduced: np.ndarray  # float64 (E, 3)
     state_starts: np.ndarray  # int32 (S_t,)
     state_counts: np.ndarray  # int32 (S_t,)
 
@@ -132,8 +133,10 @@ class LayeredMDP:
     probs: np.ndarray  # float64 (3,)
     layers: list[list[tuple[int, ...]]]
     layer_dalys: list[np.ndarray]
+    layer_equity_gaps: list[np.ndarray]
     transitions: list[PeriodTransitions]
     bau_dalys: float
+    bau_equity_gap: float
     build_seconds: float
 
 
@@ -148,6 +151,7 @@ class FiniteHorizonSolution:
     policy_action_costs: list[np.ndarray]
     expected_value_s0: float
     solve_seconds: float
+    equity_weight_lambda: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -219,20 +223,20 @@ def format_action_label(combo: tuple[int, ...], units: list[str]) -> str:
     return "no_op" if not parts else " + ".join(parts)
 
 
-def _compute_states_dalys(
+def _compute_states_dalys_and_equity(
     states: list[tuple[int, ...]],
     n_units: int,
     step_u: np.ndarray,
     bio_eta: np.ndarray,
     evaluator: Stage3Evaluator,
-) -> np.ndarray:
-    """Compute 2040 DALYs for a list of state tuples via ``Stage3Evaluator``."""
+) -> tuple[np.ndarray, np.ndarray]:
+    """Compute 2040 DALYs and ASR equity gaps for state tuples via ``Stage3Evaluator``."""
     arr = np.asarray(states, dtype=float)
     clean_bins = arr[:, :n_units]
     bio_bins = arr[:, n_units : 2 * n_units]
     eff_gains = (clean_bins + bio_bins * bio_eta[np.newaxis, :]) * step_u[np.newaxis, :]
-    dalys_mean, _, _, _, _ = evaluator.evaluate_effective_gains(eff_gains)
-    return dalys_mean
+    dalys_mean, _, _, eq_gap_asr, _ = evaluator.evaluate_effective_gains(eff_gains)
+    return dalys_mean, eq_gap_asr
 
 
 def _is_action_valid_and_cost(
@@ -381,15 +385,19 @@ def build_layered_mdp(
     unready_lookup = {u: idx for idx, u in enumerate(unready_units)}
 
     layers: list[list[tuple[int, ...]]] = [[init_state]]
-    layer_dalys: list[np.ndarray] = [
-        _compute_states_dalys([init_state], n_u, step_u, bio_eta, evaluator)
-    ]
-    bau_dalys = float(layer_dalys[0][0])
+    init_dalys, init_eq = _compute_states_dalys_and_equity(
+        [init_state], n_u, step_u, bio_eta, evaluator
+    )
+    layer_dalys: list[np.ndarray] = [init_dalys]
+    layer_equity_gaps: list[np.ndarray] = [init_eq]
+    bau_dalys = float(init_dalys[0])
+    bau_eq = float(init_eq[0])
     transitions: list[PeriodTransitions] = []
 
     for t in range(n_p):
         curr_states = layers[t]
         curr_dalys = layer_dalys[t]
+        curr_eq = layer_equity_gaps[t]
         next_map: dict[tuple[int, ...], int] = {}
         next_states: list[tuple[int, ...]] = []
 
@@ -456,13 +464,17 @@ def build_layered_mdp(
 
             counts[s_idx] = len(src_list) - starts[s_idx]
 
-        next_dalys = _compute_states_dalys(next_states, n_u, step_u, bio_eta, evaluator)
+        next_dalys, next_eq = _compute_states_dalys_and_equity(
+            next_states, n_u, step_u, bio_eta, evaluator
+        )
         layers.append(next_states)
         layer_dalys.append(next_dalys)
+        layer_equity_gaps.append(next_eq)
 
         next_arr = np.asarray(next_triples, dtype=np.int32)
         src_arr = np.asarray(src_list, dtype=np.int32)
         dalys_av = curr_dalys[src_arr][:, np.newaxis] - next_dalys[next_arr]
+        eq_red = curr_eq[src_arr][:, np.newaxis] - next_eq[next_arr]
 
         transitions.append(
             PeriodTransitions(
@@ -471,6 +483,7 @@ def build_layered_mdp(
                 cost=np.asarray(cost_list, dtype=float),
                 next_state=next_arr,
                 dalys_averted=dalys_av,
+                equity_gap_reduced=eq_red,
                 state_starts=starts,
                 state_counts=counts,
             )
@@ -490,8 +503,10 @@ def build_layered_mdp(
         probs=probs,
         layers=layers,
         layer_dalys=layer_dalys,
+        layer_equity_gaps=layer_equity_gaps,
         transitions=transitions,
         bau_dalys=bau_dalys,
+        bau_equity_gap=bau_eq,
         build_seconds=float(build_s),
     )
 
@@ -527,6 +542,7 @@ def solve_finite_horizon_backward_induction(
     *,
     cost_weight_lambda: float,
     discount_factor: float,
+    equity_weight_lambda: float = 0.0,
 ) -> FiniteHorizonSolution:
     """Solve finite-horizon MDP by vectorized NumPy backward induction."""
     t0 = time.perf_counter()
@@ -537,12 +553,13 @@ def solve_finite_horizon_backward_induction(
 
     probs = mdp.probs[np.newaxis, :]
     lam = float(cost_weight_lambda)
+    lam_eq = float(equity_weight_lambda)
     gamma = float(discount_factor)
 
     for t in range(n_p - 1, -1, -1):
         tr = mdp.transitions[t]
         v_next = values[0]
-        immediate = tr.dalys_averted - lam * tr.cost[:, np.newaxis]
+        immediate = tr.dalys_averted - lam * tr.cost[:, np.newaxis] + lam_eq * tr.equity_gap_reduced
         q_vals = np.sum(probs * (immediate + gamma * v_next[tr.next_state]), axis=1)
         v_curr, a_curr, c_curr = _segment_max_and_argmax(
             q_vals, tr.action_id, tr.cost, tr.state_starts, tr.state_counts
@@ -560,6 +577,7 @@ def solve_finite_horizon_backward_induction(
         policy_action_costs=policy_costs,
         expected_value_s0=float(values[0][0]),
         solve_seconds=float(solve_s),
+        equity_weight_lambda=lam_eq,
     )
 
 
@@ -629,16 +647,19 @@ def build_stationary_mdp(
             next_triples.append(nxt_triple)
         counts[s_gid] = len(src_list) - starts[s_gid]
 
-    state_dalys = _compute_states_dalys(
+    state_dalys, state_eq = _compute_states_dalys_and_equity(
         states[:-1], layered.n_units, layered.step_u, layered.bio_eta, evaluator
     )
     state_dalys = np.append(state_dalys, 0.0)
+    state_eq = np.append(state_eq, 0.0)
     src_arr = np.asarray(src_list, dtype=np.int32)
     next_arr = np.asarray(next_triples, dtype=np.int32)
     dalys_av = state_dalys[src_arr][:, np.newaxis] - state_dalys[next_arr]
-    # Transitions into absorbing sink carry zero DALY gain (stop/retire action)
+    eq_red = state_eq[src_arr][:, np.newaxis] - state_eq[next_arr]
+    # Transitions into absorbing sink carry zero DALY/equity gain (stop/retire action)
     sink_mask = next_arr == term_gid
     dalys_av = np.where(sink_mask, 0.0, dalys_av)
+    eq_red = np.where(sink_mask, 0.0, eq_red)
 
     return StationaryMDP(
         states=states,
@@ -649,6 +670,7 @@ def build_stationary_mdp(
             cost=np.asarray(cost_list, dtype=float),
             next_state=next_arr,
             dalys_averted=dalys_av,
+            equity_gap_reduced=eq_red,
             state_starts=starts,
             state_counts=counts,
         ),
@@ -715,12 +737,28 @@ def simulate_mdp_rollouts(
     *,
     n_rollouts: int,
     seed: int,
+    precomputed_branches: np.ndarray | None = None,
 ) -> pd.DataFrame:
     """Simulate ``n_rollouts`` stochastic trajectories and verify via ``Stage3Evaluator``."""
     rng = np.random.default_rng(int(seed))
     n_u = mdp.n_units
     n_p = mdp.n_periods
     n_i = evaluator.n_interventions
+
+    if precomputed_branches is not None:
+        if precomputed_branches.shape != (n_rollouts, n_p):
+            raise ValueError(
+                f"Expected precomputed_branches shape ({n_rollouts}, {n_p}), "
+                f"got {precomputed_branches.shape}."
+            )
+        branches_mat = precomputed_branches
+    else:
+        cum_probs = np.cumsum(mdp.probs)
+        u_draws = rng.random((n_rollouts, n_p))
+        branches_mat = np.minimum(
+            np.searchsorted(cum_probs, u_draws, side="right"),
+            len(mdp.probs) - 1,
+        )
 
     # Map each (t, s_idx) -> lookup dict of {action_id: (cost, next_triple)}
     trans_lookup: list[list[dict[int, tuple[float, np.ndarray]]]] = []
@@ -738,7 +776,6 @@ def simulate_mdp_rollouts(
     rollout_vectors = np.zeros((n_rollouts, evaluator.n_vars), dtype=float)
     action_records: list[list[str]] = []
     discounted_returns = np.zeros(n_rollouts, dtype=float)
-    cum_probs = np.cumsum(mdp.probs)
 
     for r_idx in range(n_rollouts):
         s_idx = 0
@@ -753,14 +790,15 @@ def simulate_mdp_rollouts(
             labels.append(format_action_label(combo, evaluator.units))
             cost, next_triple = trans_lookup[t][s_idx][a_id]
 
-            u_rand = float(rng.random())
-            branch = int(np.searchsorted(cum_probs, u_rand, side="right"))
-            branch = min(branch, len(mdp.probs) - 1)
+            branch = int(branches_mat[r_idx, t])
             ns_idx = int(next_triple[branch])
             st_next = mdp.layers[t + 1][ns_idx]
 
             da = float(mdp.layer_dalys[t][s_idx] - mdp.layer_dalys[t + 1][ns_idx])
-            disc_ret += (solution.discount_factor**t) * (da - solution.cost_weight_lambda * cost)
+            eq_red = float(mdp.layer_equity_gaps[t][s_idx] - mdp.layer_equity_gaps[t + 1][ns_idx])
+            disc_ret += (solution.discount_factor**t) * (
+                da - solution.cost_weight_lambda * cost + solution.equity_weight_lambda * eq_red
+            )
 
             # Record realized decision vector increment in period t
             for u, act in enumerate(combo):

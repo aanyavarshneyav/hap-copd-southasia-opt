@@ -417,10 +417,13 @@ class Stage3Evaluator:
             axis=1,
         )
 
-        # Data-driven infra prerequisites (same or earlier period q <= p, mirroring PDDL)
+        # Data-driven infra prerequisites (strictly earlier period q < p, matching MDP & PDDL)
         cum_built = np.maximum.accumulate(infra_built, axis=2)  # (N, U, P)
-        lpg_ready = np.maximum(self._lpg_infra_init[np.newaxis, :, np.newaxis], cum_built)
-        grid_ready = np.maximum(self._grid_ready_init[np.newaxis, :, np.newaxis], cum_built)
+        earlier_built = np.zeros_like(cum_built)
+        if self.n_periods > 1:
+            earlier_built[:, :, 1:] = cum_built[:, :, :-1]
+        lpg_ready = np.maximum(self._lpg_infra_init[np.newaxis, :, np.newaxis], earlier_built)
+        grid_ready = np.maximum(self._grid_ready_init[np.newaxis, :, np.newaxis], earlier_built)
         x_lpg = tensor[:, :, self._idx_lpg, :]
         x_elec = tensor[:, :, self._idx_elec, :]
         violation_infra_prereq = np.sum(
