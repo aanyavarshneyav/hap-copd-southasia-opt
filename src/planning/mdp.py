@@ -127,6 +127,8 @@ class LayeredMDP:
     n_budget_bins: int
     budget_step: float
     step_u: np.ndarray  # float64 (U,)
+    lpg_eta: np.ndarray  # float64 (U,)
+    elec_eta: np.ndarray  # float64 (U,)
     bio_eta: np.ndarray  # float64 (U,)
     unready_units: tuple[int, ...]
     templates: tuple[tuple[int, ...], ...]
@@ -227,14 +229,21 @@ def _compute_states_dalys_and_equity(
     states: list[tuple[int, ...]],
     n_units: int,
     step_u: np.ndarray,
+    lpg_eta: np.ndarray,
+    elec_eta: np.ndarray,
     bio_eta: np.ndarray,
     evaluator: Stage3Evaluator,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Compute 2040 DALYs and ASR equity gaps for state tuples via ``Stage3Evaluator``."""
     arr = np.asarray(states, dtype=float)
-    clean_bins = arr[:, :n_units]
-    bio_bins = arr[:, n_units : 2 * n_units]
-    eff_gains = (clean_bins + bio_bins * bio_eta[np.newaxis, :]) * step_u[np.newaxis, :]
+    lpg_bins = arr[:, :n_units]
+    elec_bins = arr[:, n_units : 2 * n_units]
+    bio_bins = arr[:, 2 * n_units : 3 * n_units]
+    eff_gains = (
+        lpg_bins * lpg_eta[np.newaxis, :]
+        + elec_bins * elec_eta[np.newaxis, :]
+        + bio_bins * bio_eta[np.newaxis, :]
+    ) * step_u[np.newaxis, :]
     dalys_mean, _, _, eq_gap_asr, _ = evaluator.evaluate_effective_gains(eff_gains)
     return dalys_mean, eq_gap_asr
 
@@ -278,7 +287,7 @@ def _is_action_valid_and_cost(
         else:
             c_pos = bio_pos
 
-        if raws[u] + steps > max_bin:
+        if float(step_u[u]) <= 0.0 or raws[u] + steps > max_bin:
             return False, 0.0
         cap = float(evaluator._non_infra_max_adoption[u, c_pos, period_idx])
         if steps * float(step_u[u]) > cap + _FLOAT_EPS:
@@ -304,10 +313,11 @@ def _apply_action_branch(
 ) -> tuple[int, ...]:
     """Compute successor state tuple for one stochastic uptake branch ``mult_mode``."""
     n_unready = len(unready_units)
-    nc = list(state[:n_units])
-    nb = list(state[n_units : 2 * n_units])
-    n_lpg = list(state[2 * n_units : 2 * n_units + n_unready])
-    n_grid = list(state[2 * n_units + n_unready : 2 * n_units + 2 * n_unready])
+    nl = list(state[:n_units])
+    ne = list(state[n_units : 2 * n_units])
+    nb = list(state[2 * n_units : 3 * n_units])
+    n_lpg = list(state[3 * n_units : 3 * n_units + n_unready])
+    n_grid = list(state[3 * n_units + n_unready : 3 * n_units + 2 * n_unready])
 
     lpg_pos = int(np.flatnonzero(evaluator._non_infra_indices == evaluator._idx_lpg)[0])
     bio_pos = int(np.flatnonzero(evaluator._non_infra_indices == evaluator._idx_bio)[0])
@@ -340,14 +350,16 @@ def _apply_action_branch(
         else:  # high uptake: ceil(1.25 * steps), capped at max adoption & ceiling
             gain = min(int(np.ceil(1.25 * steps)), cap_bins)
 
-        raw_u = nc[u] + nb[u]
+        raw_u = nl[u] + ne[u] + nb[u]
         gain = max(0, min(gain, cap_bins, max_bin - raw_u))
         if act == ACT_BIOMASS_1:
             nb[u] += gain
+        elif act == ACT_ELEC_1:
+            ne[u] += gain
         else:
-            nc[u] += gain
+            nl[u] += gain
 
-    return tuple(nc) + tuple(nb) + tuple(n_lpg) + tuple(n_grid) + (b_next,)
+    return tuple(nl) + tuple(ne) + tuple(nb) + tuple(n_lpg) + tuple(n_grid) + (b_next,)
 
 
 def build_layered_mdp(
@@ -364,9 +376,13 @@ def build_layered_mdp(
     n_b = mdp_cfg.budget_bins
     budget_step = evaluator.total_budget_usd_millions / float(n_b - 1) if n_b > 1 else 0.0
 
-    headroom = np.maximum(0.0, evaluator._coverage_ceiling - evaluator._cf_bau_2040 - _FLOAT_EPS)
+    headroom = np.maximum(0.0, evaluator.effective_adoption_headroom() - _FLOAT_EPS)
     step_u = headroom / float(max_bin)
+    lpg_pos = int(np.flatnonzero(evaluator._non_infra_indices == evaluator._idx_lpg)[0])
+    elec_pos = int(np.flatnonzero(evaluator._non_infra_indices == evaluator._idx_elec)[0])
     bio_pos = int(np.flatnonzero(evaluator._non_infra_indices == evaluator._idx_bio)[0])
+    lpg_eta = evaluator._non_infra_effectiveness[:, lpg_pos]
+    elec_eta = evaluator._non_infra_effectiveness[:, elec_pos]
     bio_eta = evaluator._non_infra_effectiveness[:, bio_pos]
 
     lpg_init = [int(v >= 1.0) for v in evaluator._lpg_infra_init]
@@ -377,7 +393,12 @@ def build_layered_mdp(
 
     init_b_bin = (n_b - 1) if evaluator.total_budget_usd_millions > 0.0 else 0
     init_state = (
-        tuple([0] * n_u) + tuple([0] * n_u) + init_lpg_flags + init_grid_flags + (init_b_bin,)
+        tuple([0] * n_u)
+        + tuple([0] * n_u)
+        + tuple([0] * n_u)
+        + init_lpg_flags
+        + init_grid_flags
+        + (init_b_bin,)
     )
 
     act_templates = templates if templates is not None else build_action_templates(n_u)
@@ -386,7 +407,7 @@ def build_layered_mdp(
 
     layers: list[list[tuple[int, ...]]] = [[init_state]]
     init_dalys, init_eq = _compute_states_dalys_and_equity(
-        [init_state], n_u, step_u, bio_eta, evaluator
+        [init_state], n_u, step_u, lpg_eta, elec_eta, bio_eta, evaluator
     )
     layer_dalys: list[np.ndarray] = [init_dalys]
     layer_equity_gaps: list[np.ndarray] = [init_eq]
@@ -410,14 +431,15 @@ def build_layered_mdp(
 
         for s_idx, st in enumerate(curr_states):
             starts[s_idx] = len(src_list)
-            c_part = st[:n_u]
-            b_part = st[n_u : 2 * n_u]
+            l_part = st[:n_u]
+            e_part = st[n_u : 2 * n_u]
+            b_part = st[2 * n_u : 3 * n_u]
             n_unready = len(unready_units)
-            lpg_part = st[2 * n_u : 2 * n_u + n_unready]
-            grid_part = st[2 * n_u + n_unready : 2 * n_u + 2 * n_unready]
+            lpg_part = st[3 * n_u : 3 * n_u + n_unready]
+            grid_part = st[3 * n_u + n_unready : 3 * n_u + 2 * n_unready]
             rem_b = st[-1]
 
-            raws = [c_part[u] + b_part[u] for u in range(n_u)]
+            raws = [l_part[u] + e_part[u] + b_part[u] for u in range(n_u)]
             lpg_ready = [
                 lpg_part[unready_lookup[u]] if u in unready_lookup else 1 for u in range(n_u)
             ]
@@ -465,7 +487,7 @@ def build_layered_mdp(
             counts[s_idx] = len(src_list) - starts[s_idx]
 
         next_dalys, next_eq = _compute_states_dalys_and_equity(
-            next_states, n_u, step_u, bio_eta, evaluator
+            next_states, n_u, step_u, lpg_eta, elec_eta, bio_eta, evaluator
         )
         layers.append(next_states)
         layer_dalys.append(next_dalys)
@@ -497,6 +519,8 @@ def build_layered_mdp(
         n_budget_bins=n_b,
         budget_step=budget_step,
         step_u=step_u,
+        lpg_eta=lpg_eta,
+        elec_eta=elec_eta,
         bio_eta=bio_eta,
         unready_units=unready_units,
         templates=act_templates,
@@ -648,7 +672,13 @@ def build_stationary_mdp(
         counts[s_gid] = len(src_list) - starts[s_gid]
 
     state_dalys, state_eq = _compute_states_dalys_and_equity(
-        states[:-1], layered.n_units, layered.step_u, layered.bio_eta, evaluator
+        states[:-1],
+        layered.n_units,
+        layered.step_u,
+        layered.lpg_eta,
+        layered.elec_eta,
+        layered.bio_eta,
+        evaluator,
     )
     state_dalys = np.append(state_dalys, 0.0)
     state_eq = np.append(state_eq, 0.0)
@@ -807,13 +837,13 @@ def simulate_mdp_rollouts(
                 if act == ACT_INFRA:
                     tensor[u, evaluator._idx_infra, t] = evaluator.infra_build_threshold
                 elif act == ACT_BIOMASS_1:
-                    delta_bins = st_next[n_u + u] - st_curr[n_u + u]
+                    delta_bins = st_next[2 * n_u + u] - st_curr[2 * n_u + u]
                     tensor[u, evaluator._idx_bio, t] = float(delta_bins) * float(mdp.step_u[u])
                 elif act in (ACT_LPG_1, ACT_LPG_2):
                     delta_bins = st_next[u] - st_curr[u]
                     tensor[u, evaluator._idx_lpg, t] = float(delta_bins) * float(mdp.step_u[u])
                 elif act == ACT_ELEC_1:
-                    delta_bins = st_next[u] - st_curr[u]
+                    delta_bins = st_next[n_u + u] - st_curr[n_u + u]
                     tensor[u, evaluator._idx_elec, t] = float(delta_bins) * float(mdp.step_u[u])
 
             s_idx = ns_idx
@@ -880,13 +910,18 @@ def policy_table_to_dataframe(
                 "action_cost_usd_millions": float(solution.policy_action_costs[t][s_idx]),
             }
             for u_idx, unit in enumerate(evaluator.units):
-                c_b = int(st[u_idx])
-                b_b = int(st[n_u + u_idx])
-                raw_cov = float(evaluator._cf_bau_2040[u_idx]) + (c_b + b_b) * float(
+                l_b = int(st[u_idx])
+                e_b = int(st[n_u + u_idx])
+                b_b = int(st[2 * n_u + u_idx])
+                raw_cov = float(evaluator._cf_bau_2040[u_idx]) + (l_b + e_b + b_b) * float(
                     mdp.step_u[u_idx]
                 )
-                eff_gain = (c_b + b_b * float(mdp.bio_eta[u_idx])) * float(mdp.step_u[u_idx])
-                lpg_r = bool(st[2 * n_u + unready_lookup[u_idx]] if u_idx in unready_lookup else 1)
+                eff_gain = (
+                    l_b * float(mdp.lpg_eta[u_idx])
+                    + e_b * float(mdp.elec_eta[u_idx])
+                    + b_b * float(mdp.bio_eta[u_idx])
+                ) * float(mdp.step_u[u_idx])
+                lpg_r = bool(st[3 * n_u + unready_lookup[u_idx]] if u_idx in unready_lookup else 1)
                 row[f"{unit}__raw_cov"] = raw_cov
                 row[f"{unit}__eff_gain"] = eff_gain
                 row[f"{unit}__infra_ready"] = lpg_r

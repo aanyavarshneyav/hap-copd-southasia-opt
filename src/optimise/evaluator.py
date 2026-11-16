@@ -335,9 +335,18 @@ class Stage3Evaluator:
         Constrained jointly by household coverage ceiling headroom and remaining
         population clean-fuel headroom converted via ``coverage_bridge_factor``.
         """
-        hh_headroom = np.maximum(
-            0.0, self._coverage_ceiling - self._baseline_clean_fuel_households
+def effective_adoption_headroom(self) -> np.ndarray:
+        """Return max feasible additional household adoption per unit.
+
+        Constrained jointly by household coverage ceiling headroom and remaining
+        population clean-fuel headroom converted via ``coverage_bridge_factor``.
+        """
+        hh_headroom = np.maximum(0.0, self._coverage_ceiling - self._baseline_clean_fuel_households)
+        pop_headroom_hh = (
+            np.maximum(0.0, 1.0 - self._baseline_clean_fuel_population)
+            / self._coverage_bridge_factor
         )
+        return np.minimum(hh_headroom, pop_headroom_hh)
         pop_headroom_hh = (
             np.maximum(0.0, 1.0 - self._baseline_clean_fuel_population)
             / self._coverage_bridge_factor

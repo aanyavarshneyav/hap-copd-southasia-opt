@@ -230,3 +230,153 @@ def test_run_mdp_pipeline_writes_mock_csvs_and_sidecars(tmp_path: Path) -> None:
     assert files["fig_mdp"].exists()
     assert files["fig_mdp"].stat().st_size > 1024
     assert bool(res["rollouts_df"]["is_feasible_in_evaluator"].all()) is True
+
+
+def test_mdp_respects_stack_adjusted_lpg_and_electric_eta() -> None:
+    cfg, base_ev = _make_tiny_1unit_evaluator(budget=80.0, lpg_init_ready=True)
+    base_contracts = load_stage3_contracts(load_config(CONFIG_PATH), base_dir=REPO_ROOT)
+    params = copy.deepcopy(base_contracts.intervention_params)
+    params["total_budget_usd_millions"] = 80.0
+    params["period_order"] = ["P1", "P2"]
+    for map_key in ("coverage_ceiling", "effectiveness", "unit_costs_usd_millions"):
+        params[map_key] = {"NPL_urban": params[map_key]["NPL_urban"]}
+    params["effectiveness"]["NPL_urban"]["lpg_subsidy"] = 0.86
+    params["effectiveness"]["NPL_urban"]["electric_induction"] = 0.90
+    params["max_adoption_per_period"] = {
+        "NPL_urban": {
+            interv: {p: float(vals[p]) for p in ("P1", "P2")}
+            for interv, vals in params["max_adoption_per_period"]["NPL_urban"].items()
+        }
+    }
+    f_df = base_contracts.forecasts_stage3[
+        base_contracts.forecasts_stage3["location"] == "NPL_urban"
+    ].copy()
+    b_df = base_contracts.baseline_unit_state[
+        base_contracts.baseline_unit_state["location"] == "NPL_urban"
+    ].copy()
+    b_df["lpg_infra_ready_init"] = True
+    b_df["grid_ready_init"] = True
+    surr = copy.deepcopy(base_contracts.surrogate)
+    surr["units"] = {"NPL_urban": surr["units"]["NPL_urban"]}
+    contracts = Stage3Contracts(
+        forecasts_stage3=f_df,
+        baseline_unit_state=b_df,
+        surrogate=surr,
+        intervention_params=params,
+        is_mock=True,
+        paths=base_contracts.paths,
+    )
+    ev = Stage3Evaluator(config=cfg, contracts=contracts)
+    mdp_cfg = _tiny_mdp_cfg(lam=1500.0, gamma=1.0)
+    mdp = build_layered_mdp(ev, mdp_cfg)
+    sol = solve_finite_horizon_backward_induction(
+        mdp, cost_weight_lambda=1500.0, discount_factor=1.0
+    )
+    branches = np.ones((5, ev.n_periods), dtype=int)  # nominal branch everywhere
+    roll_df = simulate_mdp_rollouts(
+        mdp, sol, ev, n_rollouts=5, seed=42, precomputed_branches=branches
+    )
+    assert bool(roll_df["is_feasible_in_evaluator"].all()) is True
+    expected_ret = float(roll_df["dalys_averted_mean"].iloc[0]) - 1500.0 * float(
+        roll_df["total_cost_usd_millions"].iloc[0]
+    )
+    assert float(roll_df["discounted_return"].iloc[0]) == pytest.approx(expected_ret, rel=1e-9)
+
+
+def test_mdp_and_comparator_enforce_equivalent_population_saturation() -> None:
+    from src.planning.compare import draw_shock_branches, simulate_open_loop_schedule
+
+    cfg = copy.deepcopy(load_config(CONFIG_PATH))
+    base_contracts = load_stage3_contracts(load_config(CONFIG_PATH), base_dir=REPO_ROOT)
+    f_df = base_contracts.forecasts_stage3.copy()
+    pop_map = {"IND_urban": 0.96, "IND_rural": 0.69, "NPL_urban": 0.64, "NPL_rural": 0.25}
+    for unit, val in pop_map.items():
+        mask = (f_df["location"] == unit) & (f_df["year"] == 2040) & (f_df["scenario"] == "bau")
+        f_df.loc[mask, "clean_fuel_share"] = val
+    params = copy.deepcopy(base_contracts.intervention_params)
+    params["coverage_ceiling"]["IND_urban"] = 0.99
+    contracts = Stage3Contracts(
+        forecasts_stage3=f_df,
+        baseline_unit_state=base_contracts.baseline_unit_state.copy(),
+        surrogate=copy.deepcopy(base_contracts.surrogate),
+        intervention_params=params,
+        is_mock=True,
+        paths=base_contracts.paths,
+    )
+    hh_base = {"IND_urban": 0.897, "IND_rural": 0.432, "NPL_urban": 0.5846, "NPL_rural": 0.2036}
+    mdp_cfg = MDPConfig.from_config(cfg)
+
+    for bf in (0.8, 1.0, 1.2):
+        ev = Stage3Evaluator(
+            config=cfg,
+            contracts=contracts,
+            baseline_clean_fuel_households=hh_base,
+            coverage_bridge_factor={u: bf for u in hh_base},
+        )
+        mdp = build_layered_mdp(ev, mdp_cfg)
+        assert np.all(mdp.max_bin * mdp.step_u <= ev.effective_adoption_headroom() + 1e-12)
+
+        sol = solve_finite_horizon_backward_induction(
+            mdp,
+            cost_weight_lambda=mdp_cfg.cost_weight_lambda,
+            discount_factor=mdp_cfg.discount_factor,
+        )
+        branches = draw_shock_branches(mdp_cfg.transition_probs, 40, ev.n_periods, 42)
+        roll_df = simulate_mdp_rollouts(
+            mdp, sol, ev, n_rollouts=40, seed=42, precomputed_branches=branches
+        )
+        assert bool(roll_df["is_feasible_in_evaluator"].all()) is True
+
+        term_states = np.asarray(mdp.layers[-1], dtype=float)
+        term_raw_bins = (
+            term_states[:, : ev.n_units]
+            + term_states[:, ev.n_units : 2 * ev.n_units]
+            + term_states[:, 2 * ev.n_units : 3 * ev.n_units]
+        )
+        term_raw_gain = term_raw_bins * mdp.step_u[np.newaxis, :]
+        assert np.all(
+            ev._baseline_clean_fuel_population[np.newaxis, :] + bf * term_raw_gain <= 1.0 + 1e-12
+        )
+
+    # Comparator enforces evaluator saturation ceiling under nominal execution
+    ev_10 = Stage3Evaluator(
+        config=cfg,
+        contracts=contracts,
+        baseline_clean_fuel_households=hh_base,
+        coverage_bridge_factor={u: 1.0 for u in hh_base},
+    )
+    x_oversat = np.zeros(ev_10.n_vars, dtype=float)
+    ind_u = ev_10.units.index("IND_urban")
+    lpg_i = ev_10.interventions.index("lpg_subsidy")
+    x_oversat[ind_u * ev_10.n_interventions * ev_10.n_periods + lpg_i * ev_10.n_periods] = 0.06
+    nom_branches = np.ones((4, ev_10.n_periods), dtype=int)
+    sim_over = simulate_open_loop_schedule(
+        x_oversat,
+        ev_10,
+        nom_branches,
+        cost_weight_lambda=mdp_cfg.cost_weight_lambda,
+        discount_factor=mdp_cfg.discount_factor,
+    )
+    assert bool(sim_over["is_feasible_in_evaluator"].any()) is False
+
+    # Saturated unit (pop=1.0 -> headroom=0.0) must build MDP safely and spend zero
+    f_sat = f_df.copy()
+    mask_iu = (
+        (f_sat["location"] == "IND_urban") & (f_sat["year"] == 2040) & (f_sat["scenario"] == "bau")
+    )
+    f_sat.loc[mask_iu, "clean_fuel_share"] = 1.0
+    ev_sat = Stage3Evaluator(
+        config=cfg,
+        contracts=Stage3Contracts(
+            forecasts_stage3=f_sat,
+            baseline_unit_state=base_contracts.baseline_unit_state.copy(),
+            surrogate=copy.deepcopy(base_contracts.surrogate),
+            intervention_params=params,
+            is_mock=True,
+            paths=base_contracts.paths,
+        ),
+        baseline_clean_fuel_households=hh_base,
+    )
+    assert ev_sat.effective_adoption_headroom()[ind_u] == pytest.approx(0.0)
+    mdp_sat = build_layered_mdp(ev_sat, mdp_cfg)
+    assert mdp_sat.step_u[ind_u] == pytest.approx(0.0)

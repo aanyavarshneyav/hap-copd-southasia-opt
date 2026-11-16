@@ -290,7 +290,7 @@ def plan_to_decision_vector(
         (evaluator.n_units, evaluator.n_interventions, evaluator.n_periods),
         dtype=float,
     )
-    headroom = np.maximum(0.0, evaluator._coverage_ceiling - evaluator._cf_bau_2040 - _FLOAT_EPS)
+    headroom = np.maximum(0.0, evaluator.effective_adoption_headroom() - _FLOAT_EPS)
 
     for action_str in action_sequence:
         act_name, args = _parse_action_call(action_str)

@@ -190,8 +190,8 @@ def repair_decision_vectors(
     tensor[:, :, evaluator._idx_lpg, :] *= lpg_ready
     tensor[:, :, evaluator._idx_elec, :] *= grid_ready
 
-    # 5. Enforce per-unit coverage ceilings with float safety margin
-    headroom = np.maximum(0.0, evaluator._coverage_ceiling - evaluator._cf_bau_2040)[np.newaxis, :]
+    # 5. Enforce joint household-ceiling & population-headroom limits with float margin
+    headroom = evaluator.effective_adoption_headroom()[np.newaxis, :]
     raw_sum = np.sum(tensor[:, :, cook_idx, :], axis=(2, 3))
     safe_headroom = np.maximum(0.0, headroom - _FLOAT_EPS)
     ceil_scale = np.where(raw_sum > headroom, safe_headroom / np.maximum(raw_sum, _FLOAT_EPS), 1.0)

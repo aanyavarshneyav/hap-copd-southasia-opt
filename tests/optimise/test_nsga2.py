@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import yaml
-from src.data.contracts import load_config
+from src.data.contracts import Stage3Contracts, load_config, load_stage3_contracts
 from src.optimise.baselines import (
     compare_nsga2_vs_baselines,
     run_all_baselines,
@@ -197,3 +197,57 @@ def test_run_stage3_writes_mock_flagged_outputs_and_sidecars(tmp_path: Path) -> 
     # Exercise run_all_baselines wrapper with tiny config
     baselines = run_all_baselines(evaluator, cfg, result["nsga2_result"].ref_point)
     assert set(baselines.keys()) == {"proportional", "greedy", "random"}
+
+
+def test_nsga2_and_repair_respect_population_saturation_across_bridge_factors() -> None:
+    from src.optimise.nsga2 import repair_decision_vectors
+
+    cfg = _tiny_test_config()
+    base_contracts = load_stage3_contracts(load_config(CONFIG_PATH), base_dir=REPO_ROOT)
+    f_df = base_contracts.forecasts_stage3.copy()
+    pop_map = {"IND_urban": 0.96, "IND_rural": 0.69, "NPL_urban": 0.64, "NPL_rural": 0.25}
+    for unit, val in pop_map.items():
+        mask = (f_df["location"] == unit) & (f_df["year"] == 2040) & (f_df["scenario"] == "bau")
+        f_df.loc[mask, "clean_fuel_share"] = val
+    params = copy.deepcopy(base_contracts.intervention_params)
+    params["coverage_ceiling"]["IND_urban"] = 0.99
+    contracts = Stage3Contracts(
+        forecasts_stage3=f_df,
+        baseline_unit_state=base_contracts.baseline_unit_state.copy(),
+        surrogate=copy.deepcopy(base_contracts.surrogate),
+        intervention_params=params,
+        is_mock=True,
+        paths=base_contracts.paths,
+    )
+    hh_base = {"IND_urban": 0.897, "IND_rural": 0.432, "NPL_urban": 0.5846, "NPL_rural": 0.2036}
+
+    for bf in (0.8, 1.0, 1.2):
+        ev = Stage3Evaluator(
+            config=cfg,
+            contracts=contracts,
+            baseline_clean_fuel_households=hh_base,
+            coverage_bridge_factor={u: bf for u in hh_base},
+        )
+        # Over-saturated raw vector (<= hh ceiling gap, > pop headroom) must repair cleanly
+        x_over = np.zeros(ev.n_vars)
+        ind_u = ev.units.index("IND_urban")
+        lpg_i = ev.interventions.index("lpg_subsidy")
+        x_over[ind_u * ev.n_interventions * ev.n_periods + lpg_i * ev.n_periods] = 0.09
+        x_rep = repair_decision_vectors(x_over, ev, repair_budget=True)
+        res_rep = ev.evaluate(x_rep)
+        assert res_rep.is_feasible is True
+        assert res_rep.violation_coverage_ceiling == pytest.approx(0.0)
+        ten = x_rep.reshape(ev.n_units, ev.n_interventions, ev.n_periods)
+        raw_gain = np.sum(ten[:, ev._non_infra_indices, :], axis=(1, 2))
+        assert np.all(raw_gain <= ev.effective_adoption_headroom() + 1e-12)
+        assert np.all(ev._baseline_clean_fuel_population + bf * raw_gain <= 1.0 + 1e-12)
+
+        # Full NSGA-II front obeys joint headroom across all 4 units
+        multi = run_nsga2_multi_seed(ev, cfg)
+        assert np.all(np.asarray(multi.combined_evaluation.is_feasible, dtype=bool))
+        ten_all = multi.combined_X.reshape(-1, ev.n_units, ev.n_interventions, ev.n_periods)
+        raw_all = np.sum(ten_all[:, :, ev._non_infra_indices, :], axis=(2, 3))
+        assert np.all(
+            ev._baseline_clean_fuel_population[np.newaxis, :] + bf * raw_all <= 1.0 + 1e-9
+        )
+        assert np.all(raw_all <= ev.effective_adoption_headroom()[np.newaxis, :] + 1e-9)

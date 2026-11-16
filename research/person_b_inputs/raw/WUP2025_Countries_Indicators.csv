@@ -1,0 +1,21 @@
+IndicatorNo,Topic,Indicator,IndicatorName,Unit
+1,Population, Pop_1Jan,Population by Degree of Urbanization on 1 January,thousands
+5,Population, percPop_1Jan,Percentage of Population by Degree of Urbanization on 1 January,per cent
+8,Population, Pop,Population by Degree of Urbanization at Mid-Year,thousands
+12,Population, percPop,Percentage of Population by Degree of Urbanization at Mid-Year,per cent
+15,Population, Pop_rate,Annual Rate of Change of the Population by Degree of Urbanization,per cent
+18,Population, percPop_rate,Annual Rate of Change of the Percentage of Population by Degree of Urbanization,per cent
+2,Land area, AREA_km2_1Jan,Land area by Degree of Urbanization on 1 January,square kilometre
+6,Land area, percAREA_km2_1Jan,Percentage of Land area by Degree of Urbanization on 1 January,per cent
+9,Land area, AREA_km2,Land area by Degree of Urbanization at Mid-Year,thousands
+13,Land area, percAREA_km2,Percentage of Land area by Degree of Urbanization at Mid-Year,per cent
+16,Land area, AREA_km2_rate,Annual Rate of Change of the Land area by Degree of Urbanization,per cent
+19,Land area, percAREA_km2_rate,Annual Rate of Change of the Percentage of Land area by Degree of Urbanization,per cent
+3,Built-up area, BU_km2_1Jan,Built-up area by Degree of Urbanization on 1 January,square kilometre
+4,Built-up area, BU_m2_per_person_1Jan,Built-up area per capita by Degree of Urbanization on 1 January,square meter
+7,Built-up area, percBU_km2_1Jan,Percentage of Built-up area by Degree of Urbanization on 1 January,per cent
+10,Built-up area, BU_km2,Built-up area by Degree of Urbanization at Mid-Year,thousands
+11,Built-up area, BU_m2_per_capita,Built-up area per capita by Degree of Urbanization at Mid-Year,square meter
+14,Built-up area, percBU_km2,Percentage of Built-up area by Degree of Urbanization at Mid-Year,per cent
+17,Built-up area, BU_km2_rate,Annual Rate of Change of the Built-up area by Degree of Urbanization,per cent
+20,Built-up area, percBU_km2_rate,Annual Rate of Change of the Percentage of Built-up area by Degree of Urbanization,per cent
