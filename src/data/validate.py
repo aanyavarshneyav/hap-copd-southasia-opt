@@ -44,6 +44,10 @@ def validate_manifest(raw_dir: Path) -> dict[str, Any]:
     for rel_path, meta in files.items():
         file_path = raw_dir / rel_path
         if not file_path.exists():
+            flat_candidate = raw_dir / Path(rel_path).name
+            if flat_candidate.is_file():
+                file_path = flat_candidate
+        if not file_path.exists():
             raise FileNotFoundError(f"File listed in manifest missing on disk: {file_path}")
         actual_sha = compute_sha256(file_path)
         expected_sha = meta.get("sha256")

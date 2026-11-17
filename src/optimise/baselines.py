@@ -82,12 +82,13 @@ def run_proportional_equal_split(
     infra_idx = evaluator._idx_infra
     cook_idx = evaluator._non_infra_indices
 
-    # 1. Build P1 infrastructure for units that are not initially fully ready
+    # 1. Build P1 infrastructure for units that are not initially fully ready (when infra enabled)
     infra_spent = 0.0
     unready_units = [
         u_idx
         for u_idx in range(evaluator.n_units)
-        if (evaluator._lpg_infra_init[u_idx] < 1.0) or (evaluator._grid_ready_init[u_idx] < 1.0)
+        if evaluator._infra_enabled[u_idx]
+        and ((evaluator._lpg_infra_init[u_idx] < 1.0) or (evaluator._grid_ready_init[u_idx] < 1.0))
     ]
     unready_units.sort(key=lambda u: float(evaluator._infra_costs[u] * disc[0]))
     for u_idx in unready_units:
@@ -220,7 +221,7 @@ def run_greedy_dalys_per_dollar(
                     needs_infra = (
                         i_idx == evaluator._idx_lpg and lpg_ready[u_idx, p_idx] < 1.0
                     ) or (i_idx == evaluator._idx_elec and grid_ready[u_idx, p_idx] < 1.0)
-                    if needs_infra and p_idx == 0:
+                    if needs_infra and (p_idx == 0 or not evaluator._infra_enabled[u_idx]):
                         continue
                     infra_p_idx = p_idx - 1
                     infra_delta_cost = (

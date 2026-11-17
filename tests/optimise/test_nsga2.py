@@ -30,7 +30,7 @@ from src.optimise.nsga2 import (
 from src.optimise.run import artifact_path, run_stage3
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CONFIG_PATH = REPO_ROOT / "configs" / "default.yaml"
+CONFIG_PATH = REPO_ROOT / "configs" / "mock.yaml"
 
 
 def _tiny_test_config() -> dict[str, Any]:

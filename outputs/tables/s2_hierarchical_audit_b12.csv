@@ -1,0 +1,9 @@
+check_id,level,relationship,raw_max_abs_err,reconciled_max_abs_err,status
+H1_wpp_country_sex_pop,Country Sex Population (WPP 2024),pop_female + pop_male == pop_total (IND/NPL 2025 & 2040),1.0,1.0,PASS (exact <= 1 person WPP thousands rounding)
+H2_forecast_sex_pop,Subnational Sex Population (2025-2040),pop_female + pop_male == pop_both (full precision),11.300000071525574,0.0,RECONCILED (exact 0.0 in derived contracts)
+H3_forecast_sex_counts,DALY & Death Counts (2025-2040),val_female + val_male == val_both (full float64 precision),223505.16999999993,1.862645149230957e-09,RECONCILED (exact float64; <=0.02 post-CSV 2-dec rounding)
+H4_forecast_weighted_rates,Sex ASRs Population-Weighted Consistency,(rate_F*pop_F + rate_M*pop_M)/pop_both == rate_both,34.95648243460005,2.2737367544323206e-13,RECONCILED (exact float64; never sums rates directly)
+H5_hist_urban_rural_to_country,Historical Stage 1 Counts (1990 & 2023),IND_urban + IND_rural == India; NPL_urban + NPL_rural == Nepal,2.9103830456733704e-11,2.9103830456733704e-11,PASS (exact <1e-6 under consistent Stage 1 apportionment)
+H6_forecast_urban_rural_pop_vs_country,Forecast 2040 Urban+Rural Pop vs WPP Country Total,Legacy WUP linear-share IND/NPL pop sum vs WPP national; NPHC 2021 (66.17% NPL urban) & WUP 2025 DEGURBA (84.1% IND) kept separate,9.00000000372529,9.00000000372529,PASS (<=9 persons / 5.5e-9; incompatible defs not mixed)
+H7_country_to_regional_aggregate,Country -> Regional South Asia Aggregate,No comparable regional aggregate row exists in GBD/WHO/Stage 2 outputs,,,NOT_APPLICABLE (verified absent; no regional aggregate fabricated)
+H8_mc_500_draws_sex_additivity,500 Stage 2 Uncertainty Draws,dalys_count_draw(female) + dalys_count_draw(male) == both,961988.1699999999,0.010000000009313226,RECONCILED (exact float64; <=0.01 post-CSV 2-dec rounding)

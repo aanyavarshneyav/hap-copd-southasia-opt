@@ -24,11 +24,8 @@ def extract_wpp_2024_2040_population(raw_dir: Path, interim_dir: Path) -> pd.Dat
     if cache_path.exists():
         return pd.read_parquet(cache_path)
 
-    wpp_file = (
-        raw_dir
-        / "WPP2024_PopulationBySingleAgeSex_Medium_2024-2100.csv"
-        / "WPP2024_PopulationBySingleAgeSex_Medium_2024-2100.csv"
-    )
+    wpp_base = raw_dir / "WPP2024_PopulationBySingleAgeSex_Medium_2024-2100.csv"
+    wpp_file = wpp_base / wpp_base.name if wpp_base.is_dir() else wpp_base
     if not wpp_file.exists():
         raise FileNotFoundError(f"WPP 2024-2100 file not found: {wpp_file}")
 

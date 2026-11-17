@@ -423,9 +423,15 @@ def run_comparison_pipeline(
 
     # 4. PDDL classical planning baseline
     pddl_cfg = config.get("planning", {}).get("pddl", {})
+    existing_infra_prob = pddl_dir / "problem_ind_npl_existing_infra.pddl"
+    problem_path = (
+        existing_infra_prob
+        if (not np.all(evaluator._infra_enabled) and existing_infra_prob.exists())
+        else pddl_dir / "problem_ind_npl.pddl"
+    )
     pddl_actions, _ = solve_pddl(
         pddl_dir / "domain.pddl",
-        pddl_dir / "problem_ind_npl.pddl",
+        problem_path,
         search_name=str(pddl_cfg.get("search", "astar")),
         heuristic_name=str(pddl_cfg.get("heuristic", "hff")),
     )

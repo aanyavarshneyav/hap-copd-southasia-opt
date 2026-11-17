@@ -304,19 +304,37 @@ class Stage3Evaluator:
         self._max_adoption = np.zeros(
             (self.n_units, self.n_interventions, self.n_periods), dtype=float
         )
+        self._infra_enabled = np.zeros(self.n_units, dtype=bool)
         for u_idx, u in enumerate(self.units):
             for i_idx, interv in enumerate(self.interventions):
                 self._effectiveness[u_idx, i_idx] = float(params["effectiveness"][u][interv])
-                self._unit_costs[u_idx, i_idx] = float(params["unit_costs_usd_millions"][u][interv])
                 for p_idx, p_id in enumerate(self.periods):
                     self._max_adoption[u_idx, i_idx, p_idx] = float(
                         params["max_adoption_per_period"][u][interv][p_id]
                     )
+                raw_cost = params["unit_costs_usd_millions"][u][interv]
+                if interv == INFRA_INTERVENTION and raw_cost is None:
+                    if np.any(self._max_adoption[u_idx, i_idx, :] != 0.0):
+                        raise ValueError(
+                            f"unit_costs_usd_millions.{u}.infra_lpg_grid is null while "
+                            "max_adoption_per_period is non-zero."
+                        )
+                    self._unit_costs[u_idx, i_idx] = 0.0
+                    self._infra_enabled[u_idx] = False
+                else:
+                    self._unit_costs[u_idx, i_idx] = float(raw_cost)
+                    if interv == INFRA_INTERVENTION:
+                        self._infra_enabled[u_idx] = bool(
+                            np.any(
+                                self._max_adoption[u_idx, i_idx, :] >= self.infra_build_threshold
+                            )
+                        )
 
         self._non_infra_effectiveness = self._effectiveness[:, self._non_infra_indices]
         self._non_infra_costs = self._unit_costs[:, self._non_infra_indices]
         self._non_infra_max_adoption = self._max_adoption[:, self._non_infra_indices, :]
         self._infra_costs = self._unit_costs[:, self._idx_infra]
+        self._infra_max_adoption = self._max_adoption[:, self._idx_infra, :]
 
     @classmethod
     def from_config(
@@ -443,7 +461,9 @@ class Stage3Evaluator:
             x_cook * self._non_infra_costs[np.newaxis, :, :, np.newaxis] * disc,
             axis=(1, 2, 3),
         )
-        infra_built = (x_infra >= self.infra_build_threshold).astype(float)  # (N, U, P)
+        infra_built = (
+            (x_infra >= self.infra_build_threshold) & self._infra_enabled[np.newaxis, :, np.newaxis]
+        ).astype(float)  # (N, U, P)
         infra_cost = np.sum(
             infra_built
             * self._infra_costs[np.newaxis, :, np.newaxis]
@@ -457,6 +477,9 @@ class Stage3Evaluator:
         violation_adoption_cap = np.sum(
             np.maximum(0.0, x_cook - self._non_infra_max_adoption[np.newaxis, :, :, :]),
             axis=(1, 2, 3),
+        ) + np.sum(
+            np.maximum(0.0, x_infra - self._infra_max_adoption[np.newaxis, :, :]),
+            axis=(1, 2),
         )
         effective_headroom = self.effective_adoption_headroom()
         violation_coverage_ceiling = np.sum(

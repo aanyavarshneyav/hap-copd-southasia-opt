@@ -1,0 +1,37 @@
+{
+  "artifact": "plan_mdp_rollouts.csv",
+  "source": "src.planning.mdp",
+  "generated_at": "2026-11-17T02:19:46Z",
+  "data_version": "GBD_2023_WPP_2024",
+  "is_mock": false,
+  "warning_mock_inputs": false,
+  "coverage_bins": [
+    0.0,
+    0.2,
+    0.4,
+    0.6,
+    0.8,
+    1.0
+  ],
+  "budget_bins": 6,
+  "discount_factor": 0.774,
+  "cost_weight_lambda": 116.0,
+  "transition_probs": [
+    0.15,
+    0.7,
+    0.15
+  ],
+  "seed": 42,
+  "layer_state_counts": [
+    1,
+    64,
+    1620,
+    20452
+  ],
+  "n_decision_states": 1685,
+  "n_macro_actions": 85,
+  "fh_expected_value_s0": 45899.05211246834,
+  "ih_expected_value_s0": 46683.275490078144,
+  "ih_iterations": 5,
+  "ih_converged": true
+}

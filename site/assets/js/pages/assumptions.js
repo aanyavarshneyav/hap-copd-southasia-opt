@@ -74,8 +74,8 @@
         <div class="page-header-top">
           <span class="page-eyebrow">04 · Contract 4 Parameters, Baselines &amp; Provenance</span>
           <div class="page-header-meta" style="margin-top:0;">
-            <span class="badge badge-real">Sourced &amp; Derived: b/param-sourcing</span>
-            <span class="badge badge-mock">Infra Capex &amp; Budget: Unresolved (null)</span>
+            <span class="badge badge-real">Active Real Config: REAL_V1_2024USD</span>
+            <span class="badge badge-mock">Infra Capex (infra_lpg_grid): Null / Disabled Scen. A</span>
             <span class="badge badge-assumption">Scenario Assumptions Only</span>
           </div>
         </div>
@@ -393,7 +393,7 @@
         return;
       }
 
-      noteEl.innerHTML = `<span class="badge badge-real">B-07/B-09 Sourced &amp; Derived</span> 2024 USD/HH scaled by 2025 derived households. <code>infra_lpg_grid</code> remains <code>null</code>.`;
+      noteEl.innerHTML = `<span class="badge badge-real">Active REAL_V1_2024USD</span> 2024 USD/HH scaled by 2025 derived households (Base 50% budget cap: <strong>$5,985.73M</strong>). <code>infra_lpg_grid</code> remains <code>null</code> &amp; disabled in Scenario A (tested under Scenario B1/B2 proxies in Optimisation Sensitivity).`;
       const filtered = c4Rows.filter((r) => state.unitFilter === "ALL" || r.unit === state.unitFilter);
       mount.innerHTML = `
         <div class="table-wrap">

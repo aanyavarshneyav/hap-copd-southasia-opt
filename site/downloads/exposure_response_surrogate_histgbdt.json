@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "is_mock": false,
+  "data_version": "GBD_2023_WPP_2024",
+  "functional_form": "log_linear",
+  "generated_at": "2026-11-16T21:11:09.953359+00:00",
+  "source_model": "hist_gbdt_panel",
+  "units": {
+    "IND_urban": {
+      "slope_clean_fuel": 0.0,
+      "baseline_clean_fuel": 0.985,
+      "sex_elasticity_ratio_f_to_m": 1.05,
+      "uncertainty_sd": 0.08
+    },
+    "IND_rural": {
+      "slope_clean_fuel": -2.2794,
+      "baseline_clean_fuel": 0.85,
+      "sex_elasticity_ratio_f_to_m": 1.05,
+      "uncertainty_sd": 0.08
+    },
+    "NPL_urban": {
+      "slope_clean_fuel": -2.8553,
+      "baseline_clean_fuel": 0.82,
+      "sex_elasticity_ratio_f_to_m": 1.05,
+      "uncertainty_sd": 0.08
+    },
+    "NPL_rural": {
+      "slope_clean_fuel": -3.7254,
+      "baseline_clean_fuel": 0.48,
+      "sex_elasticity_ratio_f_to_m": 1.05,
+      "uncertainty_sd": 0.08
+    }
+  }
+}

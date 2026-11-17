@@ -1,0 +1,8 @@
+{
+  "artifact": "plan_htn_trace.json",
+  "source": "src.planning.htn",
+  "generated_at": "2026-11-17T02:19:47Z",
+  "is_mock": false,
+  "warning_mock_inputs": false,
+  "data_version": "GBD_2023_WPP_2024"
+}

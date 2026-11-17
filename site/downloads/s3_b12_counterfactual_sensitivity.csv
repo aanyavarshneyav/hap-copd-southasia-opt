@@ -1,0 +1,9 @@
+variant,ind_urban_slope,plan_name,bau_dalys_2040,dalys_2040_mean,dalys_averted_mean,total_cost_usd_millions,equity_gap_asr,equity_gap_dalys_abs
+reconciled_baseline_ind_urban_slope_0,0.0,knee,2699837.26,2375499.49,324337.77,1667.18,26.6168,170588.05
+reconciled_baseline_ind_urban_slope_0,0.0,cost_minimal,2699837.26,2631051.64,68785.62,63.11,30.2551,195678.49
+reconciled_baseline_ind_urban_slope_0,0.0,daly_minimal,2699837.26,2229122.92,470714.34,3081.69,24.6143,157652.99
+reconciled_baseline_ind_urban_slope_0,0.0,equity_minimal,2699837.26,2229122.92,470714.34,3081.69,24.6143,157652.99
+b12_counterfactual_ind_urban_slope_-2.1933,-2.1933,knee,2699837.26,2342129.1,357708.16,1778.37,26.143,167475.4
+b12_counterfactual_ind_urban_slope_-2.1933,-2.1933,cost_minimal,2699837.26,2604862.47,94974.79,75.72,29.8535,191945.86
+b12_counterfactual_ind_urban_slope_-2.1933,-2.1933,daly_minimal,2699837.26,2204995.92,494841.34,3096.07,24.2699,155443.0
+b12_counterfactual_ind_urban_slope_-2.1933,-2.1933,equity_minimal,2699837.26,2204995.92,494841.34,3096.07,24.2699,155443.0

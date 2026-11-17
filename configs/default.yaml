@@ -20,11 +20,12 @@ paths:
   assumptions_file: docs/ASSUMPTIONS.md
   raw_manifest: data/raw/manifest.json
 interfaces:
-  use_mock_forecasts: true
-  forecast_contract_file: data/processed/forecasts_stage3.csv
+  use_mock_forecasts: false
+  forecast_contract_file: data/processed/forecasts_stage3_reconciled.csv
   forecast_mock_file: data/processed/forecasts_stage3_mock.csv
-  baseline_state_file: data/processed/baseline_unit_state.csv
+  baseline_state_file: data/processed/baseline_unit_state_reconciled.csv
   baseline_state_mock_file: data/processed/baseline_unit_state_mock.csv
+  stage2_draws_file: data/processed/stage2_uncertainty_draws_reconciled.csv
   surrogate_file: data/processed/exposure_response_surrogate.json
   surrogate_mock_file: data/processed/exposure_response_surrogate_mock.json
   intervention_params_file: configs/intervention_params.json
@@ -95,7 +96,10 @@ stage3:
   use_repair: true
   repair_budget: true
   greedy_step_size: 0.05
-  total_budget_usd_millions: null  # TODO(owner): anchor from docs/ASSUMPTIONS.md once sourced
+  total_budget_usd_millions: 5985.73  # B-09 50% Base scenario of observed-HH LPG full-gap ($11,971.47M); scenario assumption, not govt appropriation
+  apply_cost_discounting: false
+  coverage_bridge_factor_default: 1.0
+  coverage_bridge_sensitivity: [0.8, 1.0, 1.2]
   equity_metric: "abs_asr_gap_female_male"
   eval_mode: "surrogate"  # "surrogate" inside GA loop; re-evaluate Pareto front on full Stage 2
 planning:
@@ -109,12 +113,12 @@ planning:
     - 1.0
     budget_bins: 6
     discount_factor: 0.774  # ~0.95^5 per 5-year period; sensitivity tested with 1.0
-    cost_weight_lambda: 3500.0  # Calibrated from Stage 3 Pareto slope (~3,431 DALYs/$1M upper-quantile tangent; DEC-018)
+    cost_weight_lambda: 116.0  # Recalibrated from real Stage 3 Pareto median quantile slope (116.26 DALYs/$1M; overall=130.80, upper=101.61)
     transition_probs: [0.15, 0.70, 0.15]  # [low, nominal, high] uptake (ASM-15)
     n_rollouts: 1000
     vi_tol: 1.0e-6
     vi_max_iter: 500
-    lambda_sensitivity: [0.0, 1000.0, 2500.0, 3500.0, 5000.0, 7500.0, 10000.0]
+    lambda_sensitivity: [0.0, 50.0, 100.0, 116.0, 131.0, 200.0, 500.0, 3500.0]
     discount_sensitivity: [0.774, 1.0]
   compare:
     n_rollouts: 1000

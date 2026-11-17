@@ -24,7 +24,7 @@ from src.optimise.param_audit import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CONFIG_PATH = REPO_ROOT / "configs" / "default.yaml"
+CONFIG_PATH = REPO_ROOT / "configs" / "mock.yaml"
 
 
 def test_task3_usd_per_hh_formulas() -> None:

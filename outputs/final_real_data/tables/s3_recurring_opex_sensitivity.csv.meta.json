@@ -1,0 +1,26 @@
+{
+  "artifact": "s3_recurring_opex_sensitivity.csv",
+  "source": "src.optimise.final_real_suite.run_targeted_sensitivity_suite",
+  "generated_at": "2026-11-17T02:20:47Z",
+  "is_mock": false,
+  "warning_mock_inputs": false,
+  "data_version": "GBD_2023_WPP_2024",
+  "parameter_version": "REAL_V1_2024USD",
+  "seeds": {
+    "global": 42,
+    "numpy": 42,
+    "sklearn": 42,
+    "pymoo": 42,
+    "mdp": 42
+  },
+  "stage3_seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "total_budget_usd_millions": 5985.73,
+  "mdp_cost_weight_lambda": 116.0,
+  "scenario_assumptions": "Alternative B recurring 5-yr LPG opex sensitivity (P1=2.49-2.69x, P2=1.75-1.84x, P3=1.0x) vs Alternative A one-time cohort package."
+}

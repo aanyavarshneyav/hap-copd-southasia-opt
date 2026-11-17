@@ -1,0 +1,306 @@
+{
+  "schema_version": "1.0",
+  "source": "src.planning.htn",
+  "generated_at": "2026-11-17T02:19:47Z",
+  "is_mock": false,
+  "warning_mock_inputs": false,
+  "data_version": "GBD_2023_WPP_2024",
+  "summary": {
+    "n_primitive_leaves": 9,
+    "dalys_2040_mean": 2485832.3607077072,
+    "dalys_2040_lower": 1866780.6312032924,
+    "dalys_2040_upper": 3104884.096888416,
+    "total_cost_usd_millions": 807.3595999917943,
+    "equity_gap_asr": 28.212680586930308,
+    "is_feasible": true
+  },
+  "leaves": [
+    {
+      "name": "!op_deploy_improved_biomass(IND_rural, P1)",
+      "node_type": "primitive",
+      "unit": "IND_rural",
+      "intervention": "improved_biomass",
+      "period": "P1",
+      "allocation_value": 0.075,
+      "cost_usd_millions": 353.034
+    },
+    {
+      "name": "!op_deploy_electric_induction(IND_urban, P1)",
+      "node_type": "primitive",
+      "unit": "IND_urban",
+      "intervention": "electric_induction",
+      "period": "P1",
+      "allocation_value": 0.015,
+      "cost_usd_millions": 49.548
+    },
+    {
+      "name": "!op_deploy_improved_biomass(IND_rural, P2)",
+      "node_type": "primitive",
+      "unit": "IND_rural",
+      "intervention": "improved_biomass",
+      "period": "P2",
+      "allocation_value": 0.0375,
+      "cost_usd_millions": 176.517
+    },
+    {
+      "name": "!op_deploy_improved_biomass(IND_rural, P3)",
+      "node_type": "primitive",
+      "unit": "IND_rural",
+      "intervention": "improved_biomass",
+      "period": "P3",
+      "allocation_value": 0.0375,
+      "cost_usd_millions": 176.517
+    },
+    {
+      "name": "!op_deploy_improved_biomass(NPL_rural, P1)",
+      "node_type": "primitive",
+      "unit": "NPL_rural",
+      "intervention": "improved_biomass",
+      "period": "P1",
+      "allocation_value": 0.2,
+      "cost_usd_millions": 9.748
+    },
+    {
+      "name": "!op_deploy_electric_induction(NPL_urban, P1)",
+      "node_type": "primitive",
+      "unit": "NPL_urban",
+      "intervention": "electric_induction",
+      "period": "P1",
+      "allocation_value": 0.1,
+      "cost_usd_millions": 14.666
+    },
+    {
+      "name": "!op_deploy_improved_biomass(NPL_rural, P2)",
+      "node_type": "primitive",
+      "unit": "NPL_rural",
+      "intervention": "improved_biomass",
+      "period": "P2",
+      "allocation_value": 0.16,
+      "cost_usd_millions": 7.7984
+    },
+    {
+      "name": "!op_deploy_electric_induction(NPL_urban, P2)",
+      "node_type": "primitive",
+      "unit": "NPL_urban",
+      "intervention": "electric_induction",
+      "period": "P2",
+      "allocation_value": 0.08,
+      "cost_usd_millions": 11.7328
+    },
+    {
+      "name": "!op_deploy_improved_biomass(NPL_rural, P3)",
+      "node_type": "primitive",
+      "unit": "NPL_rural",
+      "intervention": "improved_biomass",
+      "period": "P3",
+      "allocation_value": 0.16,
+      "cost_usd_millions": 7.7984
+    }
+  ],
+  "tree": {
+    "name": "AchieveSouthAsiaCleanCookingPlan(2026-2040)",
+    "node_type": "compound",
+    "method": "TotalOrderForwardDecomposition",
+    "children": [
+      {
+        "name": "PlanCountryProgram(India)",
+        "node_type": "compound",
+        "method": "DecomposeUnitsByPeriod",
+        "children": [
+          {
+            "name": "PlanUnitProgram(IND_rural, P1)",
+            "node_type": "compound",
+            "method": "M3_InterimImprovedBiomass",
+            "children": [
+              {
+                "name": "!op_deploy_improved_biomass(IND_rural, P1)",
+                "node_type": "primitive",
+                "unit": "IND_rural",
+                "intervention": "improved_biomass",
+                "period": "P1",
+                "allocation_value": 0.075,
+                "cost_usd_millions": 353.034
+              }
+            ]
+          },
+          {
+            "name": "PlanUnitProgram(IND_urban, P1)",
+            "node_type": "compound",
+            "method": "M1_DeployCleanCooking",
+            "children": [
+              {
+                "name": "ScaleCleanFuel(IND_urban, P1)",
+                "node_type": "compound",
+                "method": "M1a_electric_induction",
+                "children": [
+                  {
+                    "name": "!op_deploy_electric_induction(IND_urban, P1)",
+                    "node_type": "primitive",
+                    "unit": "IND_urban",
+                    "intervention": "electric_induction",
+                    "period": "P1",
+                    "allocation_value": 0.015,
+                    "cost_usd_millions": 49.548
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "PlanUnitProgram(IND_rural, P2)",
+            "node_type": "compound",
+            "method": "M3_InterimImprovedBiomass",
+            "children": [
+              {
+                "name": "!op_deploy_improved_biomass(IND_rural, P2)",
+                "node_type": "primitive",
+                "unit": "IND_rural",
+                "intervention": "improved_biomass",
+                "period": "P2",
+                "allocation_value": 0.0375,
+                "cost_usd_millions": 176.517
+              }
+            ]
+          },
+          {
+            "name": "PlanUnitProgram(IND_urban, P2)",
+            "node_type": "compound",
+            "method": "M4_NoOp_Exhausted"
+          },
+          {
+            "name": "PlanUnitProgram(IND_rural, P3)",
+            "node_type": "compound",
+            "method": "M3_InterimImprovedBiomass",
+            "children": [
+              {
+                "name": "!op_deploy_improved_biomass(IND_rural, P3)",
+                "node_type": "primitive",
+                "unit": "IND_rural",
+                "intervention": "improved_biomass",
+                "period": "P3",
+                "allocation_value": 0.0375,
+                "cost_usd_millions": 176.517
+              }
+            ]
+          },
+          {
+            "name": "PlanUnitProgram(IND_urban, P3)",
+            "node_type": "compound",
+            "method": "M4_NoOp_Exhausted"
+          }
+        ]
+      },
+      {
+        "name": "PlanCountryProgram(Nepal)",
+        "node_type": "compound",
+        "method": "DecomposeUnitsByPeriod",
+        "children": [
+          {
+            "name": "PlanUnitProgram(NPL_rural, P1)",
+            "node_type": "compound",
+            "method": "M3_InterimImprovedBiomass",
+            "children": [
+              {
+                "name": "!op_deploy_improved_biomass(NPL_rural, P1)",
+                "node_type": "primitive",
+                "unit": "NPL_rural",
+                "intervention": "improved_biomass",
+                "period": "P1",
+                "allocation_value": 0.2,
+                "cost_usd_millions": 9.748
+              }
+            ]
+          },
+          {
+            "name": "PlanUnitProgram(NPL_urban, P1)",
+            "node_type": "compound",
+            "method": "M1_DeployCleanCooking",
+            "children": [
+              {
+                "name": "ScaleCleanFuel(NPL_urban, P1)",
+                "node_type": "compound",
+                "method": "M1a_electric_induction",
+                "children": [
+                  {
+                    "name": "!op_deploy_electric_induction(NPL_urban, P1)",
+                    "node_type": "primitive",
+                    "unit": "NPL_urban",
+                    "intervention": "electric_induction",
+                    "period": "P1",
+                    "allocation_value": 0.1,
+                    "cost_usd_millions": 14.666
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "PlanUnitProgram(NPL_rural, P2)",
+            "node_type": "compound",
+            "method": "M3_InterimImprovedBiomass",
+            "children": [
+              {
+                "name": "!op_deploy_improved_biomass(NPL_rural, P2)",
+                "node_type": "primitive",
+                "unit": "NPL_rural",
+                "intervention": "improved_biomass",
+                "period": "P2",
+                "allocation_value": 0.16,
+                "cost_usd_millions": 7.7984
+              }
+            ]
+          },
+          {
+            "name": "PlanUnitProgram(NPL_urban, P2)",
+            "node_type": "compound",
+            "method": "M1_DeployCleanCooking",
+            "children": [
+              {
+                "name": "ScaleCleanFuel(NPL_urban, P2)",
+                "node_type": "compound",
+                "method": "M1a_electric_induction",
+                "children": [
+                  {
+                    "name": "!op_deploy_electric_induction(NPL_urban, P2)",
+                    "node_type": "primitive",
+                    "unit": "NPL_urban",
+                    "intervention": "electric_induction",
+                    "period": "P2",
+                    "allocation_value": 0.08,
+                    "cost_usd_millions": 11.7328
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "PlanUnitProgram(NPL_rural, P3)",
+            "node_type": "compound",
+            "method": "M3_InterimImprovedBiomass",
+            "children": [
+              {
+                "name": "!op_deploy_improved_biomass(NPL_rural, P3)",
+                "node_type": "primitive",
+                "unit": "NPL_rural",
+                "intervention": "improved_biomass",
+                "period": "P3",
+                "allocation_value": 0.16,
+                "cost_usd_millions": 7.7984
+              }
+            ]
+          },
+          {
+            "name": "PlanUnitProgram(NPL_urban, P3)",
+            "node_type": "compound",
+            "method": "M4_NoOp_Exhausted"
+          }
+        ]
+      },
+      {
+        "name": "VerifyBudgetAndEquityGuard(feasible=True, cost=$807.4M)",
+        "node_type": "compound",
+        "method": "EvaluatorGuardCheck"
+      }
+    ]
+  }
+}

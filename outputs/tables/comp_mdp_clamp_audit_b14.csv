@@ -1,0 +1,9 @@
+strategy,eval_mode,rollouts_feasible_pct,rollouts_violated_pct,budget_viol_pct,cap_viol_pct,ceiling_viol_pct,mean_dalys_averted,mean_cost_usd_m,mean_eq_gap_asr
+mdp_adaptive_b6,pre_clamp_attempted (unclipped shock),60.0,40.0,0.0,40.0,0.5,132017.1,603.45,29.4369
+mdp_adaptive_b6,post_clamp_realized (active transition clamping),100.0,0.0,0.0,0.0,0.0,127463.3,600.35,29.5133
+ga_matched_best (id=113),open_loop_unclamped (reported comp_ga_vs_mdp),60.0,40.0,0.0,40.0,31.6,245520.0,1176.87,27.7787
+ga_matched_best (id=113),open_loop_execution_clamped (symmetric clamp),100.0,0.0,0.0,0.0,0.0,237528.8,1090.45,27.894
+ga_knee,open_loop_unclamped (reported comp_ga_vs_mdp),63.5,36.5,0.0,29.8,31.1,300322.9,1695.91,27.0156
+ga_knee,open_loop_execution_clamped (symmetric clamp),100.0,0.0,0.0,0.0,0.0,294245.9,1601.5,27.1038
+ga_daly_minimal,open_loop_unclamped (reported comp_ga_vs_mdp),60.0,40.0,0.0,40.0,33.6,437157.1,3097.29,25.1392
+ga_daly_minimal,open_loop_execution_clamped (symmetric clamp),100.0,0.0,0.0,0.0,0.0,426023.7,2891.56,25.2943

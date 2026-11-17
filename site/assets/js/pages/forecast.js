@@ -3,14 +3,16 @@
   "use strict";
 
   async function render(container) {
-    const data = await global.App.loadJSON("forecast_stage3_mock.json");
+    const data = await global.App.loadJSON("forecast_stage3.json");
     const { esc, term, accordion, fmtNum } = global.App;
     const status = data.real_stage2_status || {};
-    const mockFc = data.mock_forecasts || [];
-    const mockSurr = data.mock_surrogate || {};
+    const realFc = data.forecasts || [];
+    const realSurr = data.surrogate || {};
+    const cvMetrics = data.cv_metrics || [];
+    const summary2040 = data.forecasts_2040_summary || [];
 
     const state = {
-      activeView: "trajectories", // "trajectories" | "surrogate" | "cv_pending"
+      activeView: "trajectories", // "trajectories" | "surrogate" | "cv_metrics"
       unit: "IND_rural",
       measure: "DALYs",
       metric: "Rate_per_100k",
@@ -81,8 +83,8 @@
         <div class="page-header-top">
           <span class="page-eyebrow">03 · Stage 2 Statistical &amp; ML Forecasting</span>
           <div class="page-header-meta" style="margin-top:0;">
-            <span class="badge badge-pending">Real Stage 2 Forecasts: Pending make stage2</span>
-            <span class="badge badge-mock">Preview: SYNTHETIC MOCK_V1</span>
+            <span class="badge badge-real">Real Stage 2 Forecasts: GBD 2023 + WPP 2024</span>
+            <span class="badge badge-derived">Counterfactual Surrogate: HistGBDT Panel</span>
           </div>
         </div>
         <h1 class="page-title">Forecasting &amp; 2040 Projections</h1>
@@ -91,22 +93,22 @@
         </p>
       </header>
 
-      ${global.App.mockBanner(
-        "SYNTHETIC DATA PREVIEW (MOCK_V1) · REAL STAGE 2 PROJECTIONS PENDING",
-        "Final 2024–2040 projections and rolling-origin CV scores (MAE, RMSE, MASE) await validated Stage 2 exports (make stage2). Interactive trajectories below display synthetic MOCK_V1 contract fixtures only."
+      ${global.App.infoBanner(
+        "VALIDATED & B-12/B-13 RECONCILED STAGE 2 REAL DATA (GBD 2023 + UN WPP 2024)",
+        "Authoritative combined-sex ('both') 2040 BAU burden remains 2,699,837 DALYs (F+M = both within 1.86e-9). B-12 fixed ETS (47.73 MAE, +53.9% skill vs Naive) with 0 failures; B-13 replaced the production Contract 3 counterfactual surrogate with pooled Smooth Log-OLS (slope −2.1933 ± 0.2557 SE; 4-unit CV MAE 102.34 vs. 151.00 for HistGBDT), eliminating HistGBDT's artificial IND_urban plateau while preserving its historical benchmark."
       )}
 
       <!-- Level 1 & 2: Prominent Visual Stage -->
       <section class="section">
         <div class="tabs-bar" role="tablist" aria-label="Forecast exploration views">
           <button type="button" class="tab-btn active" role="tab" data-fc-view="trajectories">
-            2025–2040 Contract Forecast Explorer (MOCK_V1)
+            2025–2040 Real Forecast Explorer
           </button>
           <button type="button" class="tab-btn" role="tab" data-fc-view="surrogate">
-            Exposure–Response Surrogate Curve (MOCK_V1)
+            Exposure–Response Surrogate Curve
           </button>
-          <button type="button" class="tab-btn" role="tab" data-fc-view="cv_pending">
-            Model Comparison &amp; Validation (Pending Real Data)
+          <button type="button" class="tab-btn" role="tab" data-fc-view="cv_metrics">
+            Rolling-Origin CV &amp; 2040 Summary (Real Data)
           </button>
         </div>
 
@@ -131,25 +133,126 @@
       const ctrlEl = document.getElementById("fc-controls-mount");
       const stageEl = document.getElementById("fc-stage-mount");
 
-      if (state.activeView === "cv_pending") {
+      if (state.activeView === "cv_metrics") {
         ctrlEl.style.display = "none";
+        const cvB12H5 = (data.cv_summary_b12 || []).filter((r) => Number(r.horizon) === 5);
+        const models = ["arima", "ets", "naive_baseline", "hist_gbdt_panel", "poisson_rate_glm"];
+        const folds = ["2009-2013", "2014-2018", "2019-2023"];
+        const foldRows = folds.map((fld) => {
+          const stats = models.map((m) => {
+            const sub = cvMetrics.filter((r) => r.test_window === fld && r.model === m);
+            const mae = sub.reduce((a, b) => a + Number(b.mae || 0), 0) / Math.max(1, sub.length);
+            const mase = sub.reduce((a, b) => a + Number(b.mase || 0), 0) / Math.max(1, sub.length);
+            return { model: m, mae, mase };
+          });
+          return { fold: fld, stats };
+        });
+
         stageEl.innerHTML = `
-          <div class="pending-panel" style="border:none; background:transparent; padding:0.4rem 0;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
-              <h3>Stage 2 Model Comparison &amp; Actual vs. Predicted — Awaiting Validated Exports</h3>
-              <span class="badge badge-pending">Pending make stage2</span>
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Stage 2 Rolling-Origin Cross-Validation &amp; B-12 Audit</h2>
+              <p class="card-subtitle">B-12 fixed ETS, Drift, Theta &amp; horizon-matched Skill Scores (1 &minus; relMAE) across 9 South Asia locations (h=5 yrs)</p>
             </div>
-            <p>
-              No model accuracy metrics (MAE, RMSE, MASE) or real 2040 forecasts are invented here. Once Person A exports validated Stage 2 outputs, this view will compare ARIMA, ETS, Adapted Poisson Rate GLM, Random Forest, and HistGradientBoosting across three 5-year rolling-origin folds (2009–2013, 2014–2018, 2019–2023).
-            </p>
-            <div class="pending-checklist">
-              <span class="pending-chip">outputs/tables/s2_rolling_cv_metrics.csv</span>
-              <span class="pending-chip">outputs/tables/s2_forecasts_2040_summary.csv</span>
-              <span class="pending-chip">data/processed/forecasts_stage3.csv</span>
-              <span class="pending-chip">data/processed/exposure_response_surrogate.json</span>
-            </div>
+            <span class="badge badge-real">Real Stage 2 + B-12 Validation</span>
+          </div>
+          <div id="chart-fc-cv" class="chart-box"></div>
+          ${
+            cvB12H5.length
+              ? `<div class="table-wrap" style="margin-top:1rem;">
+                  <table class="data-table">
+                    <thead><tr><th>Model (B-12 Fixed, h=5 both)</th><th class="num-right">Mean MAE</th><th class="num-right">Mean RMSE</th><th class="num-right">MASE (vs 1-yr)</th><th class="num-right">Rel. MAE (vs h=5 Naive)</th><th class="num-right">Pooled Skill Score</th><th class="num-right">Failures</th></tr></thead>
+                    <tbody>
+                      ${cvB12H5
+                        .map(
+                          (r) => `
+                        <tr>
+                          <td><code>${esc(r.model)}</code></td>
+                          <td class="num-right">${fmtNum(r.mean_mae, 2)}</td>
+                          <td class="num-right">${fmtNum(r.mean_rmse, 2)}</td>
+                          <td class="num-right">${fmtNum(r.mean_mase, 2)}</td>
+                          <td class="num-right">${fmtNum(r.pooled_relative_mae, 3)}</td>
+                          <td class="num-right"><strong>${(Number(r.pooled_skill_score) * 100).toFixed(1)}%</strong></td>
+                          <td class="num-right">${r.n_failed}</td>
+                        </tr>
+                      `
+                        )
+                        .join("")}
+                    </tbody>
+                  </table>
+                </div>`
+              : ""
+          }
+          <div class="table-wrap" style="margin-top:1rem;">
+            <table class="data-table">
+              <thead><tr><th>Original Stage 2 Model</th><th>Mean MAE</th><th>Mean RMSE</th><th>Mean MASE</th><th>B-12 Audit Finding</th></tr></thead>
+              <tbody>
+                ${models
+                  .map((m) => {
+                    const sub = cvMetrics.filter((r) => r.model === m);
+                    const n = Math.max(1, sub.length);
+                    const mae = sub.reduce((a, b) => a + Number(b.mae || 0), 0) / n;
+                    const rmse = sub.reduce((a, b) => a + Number(b.rmse || 0), 0) / n;
+                    const mase = sub.reduce((a, b) => a + Number(b.mase || 0), 0) / n;
+                    const role =
+                      m === "hist_gbdt_panel"
+                        ? "Counterfactual surrogate (cf_25..cf_100); IND_urban log-OLS sensitivity -1.08%"
+                        : m === "arima"
+                        ? "ARIMA(1,1,0); strong short-term univariate baseline (49.33 MAE both-sex)"
+                        : m === "ets"
+                        ? "Original fell back to ARIMA (disp=False); B-12 fix yields 47.73 undamped / 48.78 damped MAE"
+                        : m === "poisson_rate_glm"
+                        ? "Reduced-form covariate GLM; reaches positive skill (+4.9%) at h=10 yrs"
+                        : "Persistence benchmark (re-anchored for horizon-matched skill score)";
+                    return `<tr><td><code>${esc(m)}</code></td><td class="num-right">${mae.toFixed(2)}</td><td class="num-right">${rmse.toFixed(2)}</td><td class="num-right">${mase.toFixed(2)}</td><td>${esc(role)}</td></tr>`;
+                  })
+                  .join("")}
+              </tbody>
+            </table>
+          </div>
+          <div class="table-wrap" style="margin-top:1.1rem;">
+            <table class="data-table">
+              <thead><tr><th>Unit</th><th>Measure</th><th>Metric</th><th class="num-right">2040 Val</th><th class="num-right">Lower</th><th class="num-right">Upper</th><th class="num-right">Pop 2040</th><th class="num-right">Clean Fuel Share</th></tr></thead>
+              <tbody>
+                ${summary2040
+                  .map(
+                    (r) => `
+                  <tr>
+                    <td><strong>${esc(r.location)}</strong></td>
+                    <td>${esc(r.measure)}</td>
+                    <td><code>${esc(r.metric)}</code></td>
+                    <td class="num-right">${fmtNum(r.val, 2)}</td>
+                    <td class="num-right">${fmtNum(r.lower, 2)}</td>
+                    <td class="num-right">${fmtNum(r.upper, 2)}</td>
+                    <td class="num-right">${fmtNum(r.population, 0)}</td>
+                    <td class="num-right">${(Number(r.clean_fuel_share) * 100).toFixed(1)}%</td>
+                  </tr>
+                `
+                  )
+                  .join("")}
+              </tbody>
+            </table>
           </div>
         `;
+
+        const colors = { arima: "#83CDD1", ets: "#68BBC2", naive_baseline: "#A6AAA6", hist_gbdt_panel: "#DF8B6C", poisson_rate_glm: "#D6C7A9" };
+        global.AppCharts.plot(
+          "chart-fc-cv",
+          models.map((m) => ({
+            x: foldRows.map((fr) => fr.fold),
+            y: foldRows.map((fr) => fr.stats.find((s) => s.model === m)?.mae || 0),
+            name: m,
+            type: "bar",
+            marker: { color: colors[m] },
+          })),
+          {
+            barmode: "group",
+            xaxis: { title: "Rolling-Origin Test Window" },
+            yaxis: { title: "Mean Absolute Error (MAE, ASR per 100k)" },
+            legend: { orientation: "h", y: -0.22 },
+            margin: { l: 64, r: 20, t: 18, b: 84 },
+          }
+        );
         return;
       }
 
@@ -218,15 +321,15 @@
         stageEl.innerHTML = `
           <div class="card-header">
             <div>
-              <h2 class="card-title" id="fc-main-title">2025–2040 Contract 1 Forecast Preview</h2>
+              <h2 class="card-title" id="fc-main-title">2025–2040 Real Contract 1 Forecasts</h2>
               <p class="card-subtitle">Business-as-Usual (BAU) 95% UI band vs. clean-fuel counterfactual targets (25%, 50%, 75%, 100%)</p>
             </div>
-            <span class="badge badge-mock">SYNTHETIC MOCK_V1</span>
+            <span class="badge badge-real">Real GBD 2023 + HistGBDT</span>
           </div>
           <div id="chart-fc-main" class="chart-box-tall"></div>
           <div class="chart-caption">
             <span id="fc-main-cap"></span>
-            <span><strong>Source:</strong> <code>data/processed/forecasts_stage3_mock.csv</code> (synthetic contract fixture).</span>
+            <span><strong>Source:</strong> <code>data/processed/forecasts_stage3.csv</code> (validated real Stage 2 contract).</span>
           </div>
         `;
       } else {
@@ -234,14 +337,14 @@
           <div class="card-header">
             <div>
               <h2 class="card-title" id="fc-main-title">Contract 3 Exposure–Response Surrogate</h2>
-              <p class="card-subtitle">Log-linear burden multiplier M = exp(β · Δc) evaluating 2040 intervention gains in microseconds</p>
+              <p class="card-subtitle">Log-linear burden multiplier M = exp(β · Δc) calibrated from real Stage 2 counterfactuals</p>
             </div>
-            <span class="badge badge-mock">SYNTHETIC MOCK_V1</span>
+            <span class="badge badge-real">Real Surrogate (r_fm = 1.05 Proxy)</span>
           </div>
           <div id="chart-fc-main" class="chart-box-tall"></div>
           <div class="chart-caption">
             <span id="fc-main-cap"></span>
-            <span><strong>Source:</strong> <code>data/processed/exposure_response_surrogate_mock.json</code> (female curve uses proxy elasticity).</span>
+            <span><strong>Source:</strong> <code>data/processed/exposure_response_surrogate.json</code> (female curve uses proxy elasticity).</span>
           </div>
         `;
       }
@@ -250,7 +353,7 @@
 
     function paintChart() {
       if (state.activeView === "trajectories") {
-        const unitRows = mockFc.filter(
+        const unitRows = realFc.filter(
           (r) => r.location === state.unit && r.measure === state.measure && r.metric === state.metric && r.sex === state.sex
         );
         const bauRows = unitRows.filter((r) => r.scenario === "bau").sort((a, b) => a.year - b.year);
@@ -269,13 +372,13 @@
           {
             x: years,
             y: bauRows.map((r) => r.val),
-            name: "BAU (MOCK_V1)",
+            name: "BAU (Real Stage 2)",
             mode: "lines+markers",
             line: { color: "#DF8B6C", width: 2.6 },
             marker: { size: 5 },
             customdata: bauRows.map((r) => [r.lower, r.upper, r.clean_fuel_share]),
             hovertemplate:
-              "<b>BAU (MOCK_V1)</b><br>Year: %{x}<br>Value: %{y:,.1f}<br>95% UI: [%{customdata[0]:,.1f}, %{customdata[1]:,.1f}]<br>Clean Fuel: %{customdata[2]:.0%}<extra></extra>",
+              "<b>BAU (Real)</b><br>Year: %{x}<br>Value: %{y:,.1f}<br>95% UI: [%{customdata[0]:,.1f}, %{customdata[1]:,.1f}]<br>Clean Fuel: %{customdata[2]:.1%}<extra></extra>",
           },
         ];
 
@@ -295,7 +398,7 @@
             mode: "lines+markers",
             line: { color: sc.color, width: 2, dash: "dot" },
             marker: { size: 7 },
-            hovertemplate: `<b>${sc.label} (MOCK_V1)</b><br>Year: %{x}<br>Value: %{y:,.1f}<extra></extra>`,
+            hovertemplate: `<b>${sc.label}</b><br>Year: %{x}<br>Value: %{y:,.1f}<extra></extra>`,
           });
         }
 
@@ -308,16 +411,16 @@
         });
 
         const bau2040 = bauRows.find((r) => r.year === 2040);
-        document.getElementById("fc-main-title").textContent = `${state.unit} — ${unitLabel} (${state.sex}, MOCK_V1)`;
+        document.getElementById("fc-main-title").textContent = `${state.unit} — ${unitLabel} (${state.sex})`;
         document.getElementById("fc-main-cap").textContent = bau2040
-          ? `Synthetic 2040 BAU: ${fmtNum(bau2040.val, 1)} [95% UI: ${fmtNum(bau2040.lower, 1)}–${fmtNum(bau2040.upper, 1)}].`
-          : "Synthetic Contract 1 preview.";
+          ? `Real 2040 BAU: ${fmtNum(bau2040.val, 1)} [95% UI: ${fmtNum(bau2040.lower, 1)}–${fmtNum(bau2040.upper, 1)}] at ${(Number(bau2040.clean_fuel_share) * 100).toFixed(1)}% clean fuel.`
+          : "Real Contract 1 forecast.";
       } else if (state.activeView === "surrogate") {
-        const uSurr = (mockSurr.units || {})[state.unit] || {};
-        const beta = Number(uSurr.slope_clean_fuel || -1.3);
-        const rFm = Number(uSurr.sex_elasticity_ratio_f_to_m || 1.1);
+        const uSurr = (realSurr.units || {})[state.unit] || {};
+        const beta = Number(uSurr.slope_clean_fuel ?? 0.0);
+        const rFm = Number(uSurr.sex_elasticity_ratio_f_to_m || 1.05);
         const baseCf = Number(uSurr.baseline_clean_fuel || 0.5);
-        const sd = Number(uSurr.uncertainty_sd || 0.1);
+        const sd = Number(uSurr.uncertainty_sd || 0.08);
         const maxDelta = Math.max(0.05, 1.0 - baseCf);
         const steps = Array.from({ length: 41 }, (_, i) => (i / 40) * maxDelta);
 
@@ -343,15 +446,15 @@
           ],
           {
             xaxis: { title: "Additional Clean-Fuel Coverage Δc (% pts above 2040 BAU)" },
-            yaxis: { title: "2040 Burden Multiplier (1.0 = BAU)", range: [0.35, 1.05] },
+            yaxis: { title: "2040 Burden Multiplier (1.0 = BAU)", range: [0.15, 1.05] },
             legend: { orientation: "h", y: -0.2 },
             margin: { l: 64, r: 20, t: 18, b: 84 },
           }
         );
 
-        document.getElementById("fc-main-title").textContent = `${state.unit} — Surrogate Dose–Response Curve (MOCK_V1)`;
+        document.getElementById("fc-main-title").textContent = `${state.unit} — Real Surrogate Dose–Response Curve`;
         document.getElementById("fc-main-cap").textContent =
-          `slope_clean_fuel = ${beta}, sex_elasticity_ratio_f_to_m = ${rFm} (proxy), baseline_clean_fuel = ${(baseCf * 100).toFixed(0)}%, uncertainty_sd = ${sd}.`;
+          `slope_clean_fuel = ${beta.toFixed(4)} (${beta === 0 ? "saturated HistGBDT leaf >= 0.985" : "active slope"}), sex_elasticity_ratio_f_to_m = ${rFm} (proxy), baseline_clean_fuel = ${(baseCf * 100).toFixed(1)}%, uncertainty_sd = ${sd}.`;
       }
     }
 

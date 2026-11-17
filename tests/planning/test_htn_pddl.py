@@ -22,7 +22,7 @@ from src.planning.pddl_runner import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CONFIG_PATH = REPO_ROOT / "configs" / "default.yaml"
+CONFIG_PATH = REPO_ROOT / "configs" / "mock.yaml"
 DOMAIN_PATH = REPO_ROOT / "pddl" / "domain.pddl"
 PROBLEM_PATH = REPO_ROOT / "pddl" / "problem_ind_npl.pddl"
 

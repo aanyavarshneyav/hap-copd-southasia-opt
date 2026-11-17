@@ -3,7 +3,7 @@
   "use strict";
 
   async function render(container) {
-    const data = await global.App.loadJSON("planning_mock.json");
+    const data = await global.App.loadJSON("planning.json");
     const { esc, term, accordion, fmtNum, fmtMillions, fmtUsdM } = global.App;
 
     const mdpCfg = data.mdp_config || {};
@@ -26,7 +26,7 @@
 
     const fullCompTableBody = `
       <p style="font-size:0.84rem; color:var(--text-secondary); margin:0 0 0.75rem;">
-        Evaluated across <code>N = 1,000</code> Common-Random-Numbers uptake shocks (<code>[0.5×, 1.0×, 1.25×]</code> with probabilities <code>[0.15, 0.70, 0.15]</code>) at <code>λ = 3,500</code> and <code>γ = 0.774</code>. Note: HTN is evaluated deterministically and is not included in the stochastic rollout table.
+        Evaluated across <code>N = 1,000</code> Common-Random-Numbers uptake shocks (<code>[0.5×, 1.0×, 1.25×]</code> with probabilities <code>[0.15, 0.70, 0.15]</code>) at recalibrated <code>λ = ${fmtNum(mdpCfg.cost_weight_lambda || 116)}</code> and <code>γ = ${mdpCfg.discount_factor || 0.774}</code>. Note: HTN is evaluated deterministically and is not included in the stochastic rollout table.
       </p>
       <div class="table-wrap">
         <table class="data-table">
@@ -79,8 +79,8 @@
         <div class="page-header-top">
           <span class="page-eyebrow">06 · Stage 4 Sequential &amp; Symbolic Planning</span>
           <div class="page-header-meta" style="margin-top:0;">
-            <span class="badge badge-mock">SYNTHETIC DATA — MOCK_V1</span>
-            <span class="badge badge-derived">MDP · HTN · STRIPS/PDDL</span>
+            <span class="badge badge-real">REAL DATA · GBD 2023 + REAL_V1_2024USD</span>
+            <span class="badge badge-derived">MDP (λ=116) · HTN · STRIPS/PDDL</span>
           </div>
         </div>
         <h1 class="page-title">Planning &amp; Decision Intelligence</h1>
@@ -89,15 +89,15 @@
         </p>
       </header>
 
-      ${global.App.mockBanner(
-      "SYNTHETIC DATA — DEMONSTRATION ONLY (MOCK_V1)",
-      "MDP policies, 1,000-rollout distributions, HTN traces, PDDL cost checks, and method comparisons run on synthetic MOCK_V1 contracts."
+      ${global.App.infoBanner(
+      "VALIDATED REAL-DATA SEQUENTIAL & SYMBOLIC PLANNING (SCENARIO A)",
+      "Uses real GBD 2023 counterfactuals, REAL_V1_2024USD costs ($5,985.73M cap), and real-Pareto recalibrated MDP cost weight λ = 116.0 DALYs/$1M (replacing the mock λ = 3,500 which previously triggered a no-op policy)."
     )}
 
       <div class="takeaway-bar">
         <span class="takeaway-tag">Key Finding</span>
         <div>
-          On synthetic <code>MOCK_V1</code>, the adaptive <strong>MDP achieves 0.0% constraint violations</strong> across 1,000 uncertain-uptake rollouts ($66.0M spend, adapting 14.1% of P2 paths on low P1 uptake), whereas open-loop GA schedules achieve higher mean scalarized return (572k–621k vs. 390k) at the cost of <strong>30.9%–36.5% violations</strong> under 1.25× high-uptake shocks.
+          Under stochastic uptake shocks, the adaptive <strong>MDP (b=6/11) achieves 0.0% constraint violations</strong> across 1,000 rollouts ($600.4M mean spend, 127.5k averted DALYs), whereas continuous open-loop GA achieves higher expected scalarized return (90.7k vs. 46.7k) and lower DALYs at the cost of <strong>40.0% shock-overshoot violations</strong> under 1.25× high-uptake shocks (PDDL: <strong>26.9%</strong>). HTN decomposes a deterministic 9-leaf schedule ($807.4M).
         </div>
       </div>
 
@@ -116,8 +116,8 @@
           </div>
           <div id="chart-comp-main" class="chart-box"></div>
           <div class="chart-caption">
-            <span><strong>Units:</strong> Cost in USD Millions; 2040 DALYs in Millions (error bars show 5th–95th rollout percentiles). HTN is deterministic ($395.6M, 3.45M DALYs) and excluded from stochastic rollouts.</span>
-            <span><strong>Source:</strong> <code>comp_ga_vs_mdp_mock.csv</code> (MOCK_V1).</span>
+            <span><strong>Units:</strong> Cost in USD Millions; 2040 DALYs in Millions (error bars show 5th–95th rollout percentiles). HTN is deterministic ($807.4M, 2.52M DALYs) and excluded from stochastic rollouts.</span>
+            <span><strong>Source:</strong> <code>comp_ga_vs_mdp.csv</code> (Real Data).</span>
           </div>
         </div>
       </section>
@@ -148,8 +148,8 @@
 
       <!-- Level 3: Full Comparison Table Accordion -->
       ${accordion(
-      "Full Equal-Footing Comparison Table (All 12 Stochastic Strategies + HTN)",
-      '<span class="badge badge-mock">N=1,000 CRN Rollouts</span>',
+      "Full Equal-Footing Comparison Table (Stochastic Strategies + HTN)",
+      '<span class="badge badge-real">N=1,000 CRN Rollouts</span>',
       fullCompTableBody
     )}
     `;
@@ -284,12 +284,12 @@
             <label for="mdp-budget-sel">Budget Bin</label>
             <select id="mdp-budget-sel" class="control-select">
               <option value="ALL">All Tiers (0–5)</option>
-              <option value="5">Bin 5 ($500M)</option>
-              <option value="4">Bin 4 ($400M)</option>
-              <option value="3">Bin 3 ($300M)</option>
-              <option value="2">Bin 2 ($200M)</option>
-              <option value="1">Bin 1 ($100M)</option>
-              <option value="0">Bin 0 ($0M)</option>
+              <option value="5">Bin 5 ($5,985.7M)</option>
+              <option value="4">Bin 4 ($4,788.6M)</option>
+              <option value="3">Bin 3 ($3,591.4M)</option>
+              <option value="2">Bin 2 ($2,394.3M)</option>
+              <option value="1">Bin 1 ($1,197.1M)</option>
+              <option value="0">Bin 0 ($0.0M)</option>
             </select>
           </div>
           <div class="control-group" style="flex:1; max-width:340px;">
@@ -302,10 +302,10 @@
 
       const formalTupleBody = `
         <ul class="callout-list">
-          <li><strong>States (2,277 active):</strong> <code>(t, clean_bins[4], bio_bins[4], infra_flags[2], budget_bin)</code> tracks raw clean-fuel tiers separately from biomass (η = 0.45) exposure gains.</li>
-          <li><strong>Actions (85 portfolios):</strong> Multi-unit bundles of <code>none</code>, <code>infra</code>, <code>lpg(+1/+2)</code>, <code>bio(+1)</code>, <code>elec(+1)</code>; rural LPG/induction blocked unless infra was built in a strictly earlier period (<code>q &lt; p</code>).</li>
+          <li><strong>States (${fmtNum(policyRows.length)} decision / ${fmtNum(mdpCfg.n_total_states_b6 || 22136)} total):</strong> <code>(t, clean_bins[4], bio_bins[4], infra_flags[2], budget_bin)</code> tracks raw clean-fuel tiers separately from biomass (η = 0.25) exposure gains.</li>
+          <li><strong>Actions:</strong> Multi-unit bundles of <code>none</code>, <code>lpg(+1/+2)</code>, <code>bio(+1)</code>, <code>elec(+1)</code>; in Scenario A (<code>infra_lpg_grid</code> disabled), <code>IND_urban</code> &amp; <code>NPL_urban</code> start LPG+Grid ready, <code>IND_rural</code> starts LPG ready, and <code>NPL_rural</code> relies on <code>bio(+1)</code>.</li>
           <li><strong>Transitions:</strong> Stochastic uptake multipliers <code>[0.5×, 1.0×, 1.25×]</code> with probabilities <code>[0.15, 0.70, 0.15]</code> (<code>ASM-15</code>); deterministic infra and budget transitions.</li>
-          <li><strong>Solver:</strong> Vectorized NumPy finite-horizon backward induction (<code>P1..P3</code>) + infinite-horizon VI diagnostics (<code>tol=1e-6</code>).</li>
+          <li><strong>Solver:</strong> Vectorized NumPy finite-horizon backward induction (<code>P1..P3</code>) at recalibrated <code>λ = ${fmtNum(mdpCfg.cost_weight_lambda || 116)}</code> + infinite-horizon VI diagnostics (<code>tol=1e-6</code>).</li>
         </ul>
       `;
 
@@ -317,7 +317,7 @@
                 <h3 class="card-title">How the Adaptive MDP Works</h3>
                 <p class="card-subtitle">Reward = ΔDALYs Averted − λ_cost · Cost − λ_eq · ΔASR_Gap (λ = ${fmtNum(mdpCfg.cost_weight_lambda)}, γ = ${mdpCfg.discount_factor})</p>
               </div>
-              <span class="badge badge-derived">2,277 States · 85 Actions</span>
+              <span class="badge badge-derived">${fmtNum(policyRows.length)} Active States (b=6)</span>
             </div>
             <svg viewBox="0 0 580 250" style="width:100%; height:auto; display:block;" role="img" aria-label="MDP stochastic uptake and adaptive transition diagram">
               <defs>
@@ -328,7 +328,7 @@
               <rect x="12" y="88" width="112" height="72" rx="4" fill="#24221E" stroke="#68BBC2" stroke-width="1.4"/>
               <text x="68" y="114" text-anchor="middle" fill="#EEEAE1" font-size="12" font-weight="700">P1 (2026–30)</text>
               <text x="68" y="132" text-anchor="middle" fill="#B9B2A6" font-size="10">Initial State s₀</text>
-              <text x="68" y="148" text-anchor="middle" fill="#68BBC2" font-size="9.5">Budget $500M</text>
+              <text x="68" y="148" text-anchor="middle" fill="#68BBC2" font-size="9.5">Cap $5,985.7M</text>
 
               <rect x="164" y="18" width="144" height="50" rx="4" fill="#33251F" stroke="#DF8B6C" stroke-width="1.2"/>
               <text x="236" y="39" text-anchor="middle" fill="#DF8B6C" font-size="11" font-weight="600">Low Uptake (p=0.15)</text>
@@ -385,7 +385,7 @@
 
         ${accordion(
         `MDP Optimal Policy Table Explorer (${fmtNum(policyRows.length)} Active States)`,
-        '<span class="badge badge-mock">plan_mdp_policy_mock.csv</span>',
+        '<span class="badge badge-real">plan_mdp_policy.csv</span>',
         policyExplorerBody
       )}
         ${accordion(
@@ -399,7 +399,7 @@
         const titleEl = document.getElementById("mdp-chart-title");
         const capEl = document.getElementById("mdp-chart-cap");
         if (state.mdpChartMode === "rollouts") {
-          titleEl.textContent = "1,000-Rollout Outcome Distribution (λ = 3,500, γ = 0.774)";
+          titleEl.textContent = `1,000-Rollout Outcome Distribution (λ = ${fmtNum(mdpCfg.cost_weight_lambda || 116)}, γ = ${mdpCfg.discount_factor || 0.774})`;
           capEl.textContent = "Units: Millions of projected 2040 DALYs across 1,000 seeded uptake shock paths.";
           global.AppCharts.plot(
             "chart-mdp-main",
@@ -535,7 +535,7 @@
 
         ${accordion(
         `Extracted Primitive Operator Schedule (${leaves.length} Steps)`,
-        '<span class="badge badge-mock">plan_htn_trace_mock.json</span>',
+        '<span class="badge badge-real">plan_htn_trace.json</span>',
         leafTableBody
       )}
       `;
@@ -604,7 +604,7 @@
             <pre class="code-block">${esc(pddl.domain_pddl || "")}</pre>
           </div>
           <div>
-            <div style="font-size:0.78rem; font-weight:600; margin-bottom:0.35rem; color:var(--text-secondary);">pddl/problem_ind_npl.pddl &amp; Verified Output</div>
+            <div style="font-size:0.78rem; font-weight:600; margin-bottom:0.35rem; color:var(--text-secondary);">pddl/problem_ind_npl_existing_infra.pddl &amp; Verified Output</div>
             <pre class="code-block">${esc((pddl.problem_pddl || "") + "\n\n; === SOLUTION ===\n" + (sol.raw_text || ""))}</pre>
           </div>
         </div>

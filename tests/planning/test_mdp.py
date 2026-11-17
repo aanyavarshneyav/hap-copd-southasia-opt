@@ -15,7 +15,9 @@ import yaml
 from src.data.contracts import Stage3Contracts, load_config, load_stage3_contracts
 from src.optimise.evaluator import Stage3Evaluator
 from src.planning.mdp import (
+    ACT_LPG_1,
     MDPConfig,
+    _apply_action_branch,
     build_layered_mdp,
     build_stationary_mdp,
     run_mdp_pipeline,
@@ -25,7 +27,7 @@ from src.planning.mdp import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CONFIG_PATH = REPO_ROOT / "configs" / "default.yaml"
+CONFIG_PATH = REPO_ROOT / "configs" / "mock.yaml"
 
 
 def _make_tiny_1unit_evaluator(
@@ -380,3 +382,56 @@ def test_mdp_and_comparator_enforce_equivalent_population_saturation() -> None:
     assert ev_sat.effective_adoption_headroom()[ind_u] == pytest.approx(0.0)
     mdp_sat = build_layered_mdp(ev_sat, mdp_cfg)
     assert mdp_sat.step_u[ind_u] == pytest.approx(0.0)
+
+
+def test_mdp_preclamp_high_uptake_vs_postclamp_realized() -> None:
+    """B-14 audit: _apply_action_branch clips 1.25x overshoots before evaluator scoring."""
+    _, ev = _make_tiny_1unit_evaluator(budget=200.0, lpg_init_ready=True)
+    lpg_pos = int(np.flatnonzero(ev._non_infra_indices == ev._idx_lpg)[0])
+    # 5 bins (max_bin = 4) and P1 cap = 1.1 * step5 -> cap_bins = 1, raw 1.25x = 2 steps
+    mdp_cfg_5 = MDPConfig(
+        coverage_bins=(0.0, 0.25, 0.5, 0.75, 1.0),
+        budget_bins=3,
+        discount_factor=0.774,
+        cost_weight_lambda=1500.0,
+        transition_probs=(0.15, 0.70, 0.15),
+        n_rollouts=10,
+        vi_tol=1e-6,
+        vi_max_iter=200,
+        lambda_sensitivity=(1500.0,),
+        discount_sensitivity=(0.774,),
+        seed=42,
+    )
+    step5 = float(ev.effective_adoption_headroom()[0]) / 4.0
+    ev._non_infra_max_adoption[0, lpg_pos, 0] = step5 * 1.1
+    mdp = build_layered_mdp(ev, mdp_cfg_5)
+
+    s0 = mdp.layers[0][0]
+    raw_attempted_steps = int(np.ceil(1.25 * 1))  # mult_mode == 2 for ACT_LPG_1 (steps=1) -> 2
+    assert raw_attempted_steps * mdp.step_u[0] > ev._non_infra_max_adoption[0, lpg_pos, 0]
+
+    s_post = _apply_action_branch(
+        state=s0,
+        combo=(ACT_LPG_1,),
+        b_next=1,
+        mult_mode=2,
+        period_idx=0,
+        n_units=ev.n_units,
+        unready_units=mdp.unready_units,
+        max_bin=mdp.max_bin,
+        step_u=mdp.step_u,
+        evaluator=ev,
+    )
+    # Post-clamp gain is repaired down to cap_bins (=1), keeping evaluator violation_total == 0.0
+    assert s_post[0] == 1
+    x_post = np.zeros(ev.n_vars, dtype=float)
+    x_post[lpg_pos * ev.n_periods] = s_post[0] * mdp.step_u[0]
+    res_post = ev.evaluate(x_post)
+    assert res_post.is_feasible is True
+
+    # Without clamping, raw attempted gain (=2 steps) triggers an adoption-cap violation
+    x_pre = np.zeros(ev.n_vars, dtype=float)
+    x_pre[lpg_pos * ev.n_periods] = raw_attempted_steps * mdp.step_u[0]
+    res_pre = ev.evaluate(x_pre)
+    assert res_pre.is_feasible is False
+    assert res_pre.violation_adoption_cap > 0.0
