@@ -15,7 +15,8 @@ from src.optimise.evaluator import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CONFIG_PATH = REPO_ROOT / "configs" / "default.yaml"
+CONFIG_PATH = REPO_ROOT / "configs" / "mock.yaml"
+REAL_CONFIG_PATH = REPO_ROOT / "configs" / "default.yaml"
 
 
 @pytest.fixture()
@@ -320,3 +321,63 @@ def test_population_saturation_enforces_joint_headroom_and_positive_marginal_ben
         x_npl_no_infra = np.zeros(ev_bf.n_vars)
         x_npl_no_infra[_idx(ev_bf, "NPL_rural", "lpg_subsidy", "P1")] = 0.05
         assert ev_bf.evaluate(x_npl_no_infra).violation_infra_prereq == pytest.approx(0.05)
+
+
+def test_disabled_null_infra_blocks_unready_clean_rollout() -> None:
+    from src.optimise.nsga2 import repair_decision_vectors
+
+    config = load_config(CONFIG_PATH)
+    base_contracts = load_stage3_contracts(config, base_dir=REPO_ROOT)
+    params = copy.deepcopy(base_contracts.intervention_params)
+    for u in params["unit_costs_usd_millions"]:
+        params["unit_costs_usd_millions"][u]["infra_lpg_grid"] = None
+        params["max_adoption_per_period"][u]["infra_lpg_grid"] = {"P1": 0.0, "P2": 0.0, "P3": 0.0}
+
+    contracts = Stage3Contracts(
+        forecasts_stage3=base_contracts.forecasts_stage3,
+        baseline_unit_state=base_contracts.baseline_unit_state,
+        surrogate=base_contracts.surrogate,
+        intervention_params=params,
+        is_mock=True,
+        paths=base_contracts.paths,
+    )
+    ev = Stage3Evaluator(config=config, contracts=contracts)
+    assert not np.any(ev._infra_enabled)
+
+    # Attempting to build disabled infra and unlock P2 LPG in unready NPL_rural must be infeasible
+    x_try = np.zeros(ev.n_vars)
+    x_try[_idx(ev, "NPL_rural", "infra_lpg_grid", "P1")] = 0.50
+    x_try[_idx(ev, "NPL_rural", "lpg_subsidy", "P2")] = 0.10
+    res_try = ev.evaluate(x_try)
+    assert res_try.is_feasible is False
+    assert res_try.violation_adoption_cap == pytest.approx(0.50)
+    assert res_try.violation_infra_prereq == pytest.approx(0.10)
+    assert res_try.total_cost_usd_millions == pytest.approx(
+        0.10 * float(params["unit_costs_usd_millions"]["NPL_rural"]["lpg_subsidy"])
+    )
+
+    # Repair zeroes out disabled infra and unready LPG
+    x_rep = repair_decision_vectors(x_try, ev, repair_budget=True)
+    res_rep = ev.evaluate(x_rep)
+    assert res_rep.is_feasible is True
+    assert res_rep.total_cost_usd_millions == pytest.approx(0.0)
+
+
+def test_real_config_evaluator_enforces_separate_baselines_and_disabled_infra() -> None:
+    real_ev = Stage3Evaluator.from_config(REAL_CONFIG_PATH, base_dir=REPO_ROOT)
+    assert real_ev.is_mock is False
+    assert real_ev.warning_mock_inputs is False
+    assert not np.any(real_ev._infra_enabled)
+
+    # Population (2040 BAU) vs observed household baselines remain distinct
+    assert not np.allclose(
+        real_ev._baseline_clean_fuel_population, real_ev._baseline_clean_fuel_households
+    )
+    # IND_urban: 2040 BAU pop=0.985 -> headroom=0.015 < hh headroom (0.99-0.897=0.093)
+    idx_iu = real_ev.units.index("IND_urban")
+    assert real_ev.effective_adoption_headroom()[idx_iu] == pytest.approx(0.015)
+
+    bau = real_ev.evaluate(np.zeros(real_ev.n_vars))
+    assert bau.is_feasible is True
+    assert bau.is_mock is False
+    assert bau.dalys_2040_lower < bau.dalys_2040_mean < bau.dalys_2040_upper

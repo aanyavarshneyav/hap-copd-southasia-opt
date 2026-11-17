@@ -1,0 +1,18 @@
+{
+  "artifact": "plan_pddl_solution.txt",
+  "source": "src.planning.pddl_runner",
+  "generated_at": "2026-11-17T02:19:47Z",
+  "is_mock": false,
+  "warning_mock_inputs": false,
+  "data_version": "GBD_2023_WPP_2024",
+  "planner": "pyperplan",
+  "search": "astar",
+  "heuristic": "hff",
+  "solve_seconds": 0.081709791906178,
+  "n_steps": 7,
+  "replay_verified": true,
+  "evaluator_feasible": true,
+  "dalys_2040_mean": 2275580.159929491,
+  "total_cost_usd_millions": 3262.518149967916,
+  "equity_gap_asr": 25.406348840721293
+}

@@ -11,7 +11,9 @@
 
     const statusRows = Object.entries(meta.pipeline_status || {}).map(([, info]) => {
       let badge = '<span class="badge badge-pending">Pending</span>';
-      if (info.status === "complete_mock") {
+      if (info.status === "complete") {
+        badge = '<span class="badge badge-real">Complete (Real Data)</span>';
+      } else if (info.status === "complete_mock") {
         badge = '<span class="badge badge-mock">Complete (Mock Data)</span>';
       } else if (info.status === "partial_real" || info.status === "partial_inputs_acquired") {
         badge = '<span class="badge badge-real">Real Inputs Acquired</span>';
@@ -20,10 +22,21 @@
         <tr>
           <td><strong>${esc(info.label)}</strong></td>
           <td>${badge}</td>
-          <td style="font-size:0.8rem; color:var(--text-secondary);">${esc(info.detail)}</td>
+          <td style="font-size:0.8rem; color:var(--text-secondary);">${esc(info.detail || "")}</td>
         </tr>
       `;
     });
+
+    const kpiCardsHtml = (overview.kpis || [])
+      .map(
+        (k) => `
+      <div class="kpi-card">
+        <div class="kpi-label">${esc(k.label)}</div>
+        <div class="kpi-value" style="font-size:1.35rem;">${esc(k.value)}</div>
+        <div class="kpi-detail">${esc(k.detail)}</div>
+      </div>`
+      )
+      .join("");
 
     const techDetailsHtml = `
       <div class="grid grid-2" style="margin-bottom:1.25rem;">
@@ -39,11 +52,11 @@
           </ul>
         </div>
         <div>
-          <h4 style="margin:0 0 0.6rem; font-size:0.92rem;">Methodology Caveats</h4>
+          <h4 style="margin:0 0 0.6rem; font-size:0.92rem;">Methodology Disclosures</h4>
           <ul class="callout-list">
-            <li><strong>Modelled Estimates:</strong> GBD 2023 outputs are modelled epidemiological estimates, not observed vital counts, and Stage 1–2 GBD exports remain pending.</li>
-            <li><strong>All-Age vs. ${term("ASR")}:</strong> Stage 1–2 uses aggregated all-age burden and age-standardized rates rather than 5-year age-specific COPD bins.</li>
-            <li><strong>Scenario Framing:</strong> Stage 3–4 runs use synthetic <code>MOCK_V1</code> contracts; intervention costs and effects are scenario assumptions.</li>
+            <li><strong>Modelled Estimates:</strong> GBD 2023 outputs are modelled epidemiological estimates, not observed vital-registry counts.</li>
+            <li><strong>All-Age vs. ${term("ASR")}:</strong> Stage 1–2 uses aggregated all-age burden and age-standardized rates plus reduced-form Poisson GLM rather than 5-year APC decomposition.</li>
+            <li><strong>Scenario Framing:</strong> Stage 3–4 uses <code>REAL_V1_2024USD</code> (Scenario A: <code>infra_lpg_grid</code> null/disabled; Scenario B1/B2 infra proxies in sensitivity); all figures are scenario analyses, not policy prescriptions.</li>
           </ul>
         </div>
       </div>
@@ -134,6 +147,17 @@
         </div>
       </section>
 
+      <!-- Key Verified Headlines -->
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Key Real-Data Findings (2026–2040)</h2>
+            <p class="section-desc">Headline results across GBD 2023 forecasting, NSGA-II multi-objective optimisation, and MDP adaptive planning (Scenario A base).</p>
+          </div>
+        </div>
+        <div class="kpi-grid">${kpiCardsHtml}</div>
+      </section>
+
       <!-- Four Clear Entry Points -->
       <section class="section">
         <div class="section-header">
@@ -145,33 +169,33 @@
           <button type="button" class="entry-card" data-jump="historical">
             <div class="entry-card-top">
               <span class="entry-card-title">02 · Historical Burden &amp; Clean Cooking</span>
-              <span class="badge badge-real">Real WHO/DHS Data</span>
+              <span class="badge badge-real">Real GBD 2023 + WHO/DHS</span>
             </div>
-            <p class="entry-card-desc">Explore 1990–2024 clean-cooking trends and fuel transitions in India and Nepal, plus Stage 1 GBD 2023 readiness.</p>
+            <p class="entry-card-desc">Explore 1990–2023 GBD COPD DALY trends, EAPC joinpoints, and WHO/NFHS/NDHS clean-cooking transitions across South Asia.</p>
           </button>
 
           <button type="button" class="entry-card" data-jump="forecast">
             <div class="entry-card-top">
               <span class="entry-card-title">03 · Forecasting &amp; 2040 Projections</span>
-              <span class="badge badge-mock">Stage 2 Pending · MOCK_V1</span>
+              <span class="badge badge-real">Stage 2 Complete (5 Models)</span>
             </div>
-            <p class="entry-card-desc">Inspect the 5-model benchmark design and interact with 2025–2040 counterfactual forecast contracts.</p>
+            <p class="entry-card-desc">Inspect multi-horizon CV accuracy (fixed ETS &amp; ARIMA), reconciled 2.70M 2040 BAU DALYs, and the validated Smooth Log-OLS counterfactual surrogate (-2.1933).</p>
           </button>
 
           <button type="button" class="entry-card" data-jump="optimise">
             <div class="entry-card-top">
               <span class="entry-card-title">05 · Multi-Objective Optimisation (NSGA-II)</span>
-              <span class="badge badge-mock">Synthetic MOCK_V1</span>
+              <span class="badge badge-real">Real Data · Scenario A</span>
             </div>
-            <p class="entry-card-desc">Navigate the 3D Pareto front balancing 2040 DALYs, total cost, and sex equity across 219 feasible plans.</p>
+            <p class="entry-card-desc">Navigate 251 feasible Pareto plans (up to 453.5k DALYs averted), 500-draw joint MC intervals, and 8-factor sensitivity (Scenario B1/B2 &amp; Alt B).</p>
           </button>
 
           <button type="button" class="entry-card" data-jump="planning">
             <div class="entry-card-top">
               <span class="entry-card-title">06 · Sequential &amp; Symbolic Planning</span>
-              <span class="badge badge-mock">MDP · HTN · PDDL</span>
+              <span class="badge badge-real">Real Data · MDP λ=116</span>
             </div>
-            <p class="entry-card-desc">Compare adaptive MDP recourse, HTN task trees, and verified PDDL schedules against static GA plans.</p>
+            <p class="entry-card-desc">Compare adaptive MDP recourse (0.0% violations across 1,000 rollouts) against matched GA (40.0% viol.), HTN (9 leaves), and PDDL (7 steps).</p>
           </button>
         </div>
         <div style="display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center; font-size:0.86rem; color:var(--text-secondary);">

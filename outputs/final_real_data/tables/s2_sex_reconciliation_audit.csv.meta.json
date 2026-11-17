@@ -1,0 +1,20 @@
+{
+  "source": "src.optimise.reconcile_sex",
+  "generated_at": "2026-11-17T01:44:21Z",
+  "data_version": "GBD_2023_WPP_2024",
+  "is_mock": false,
+  "raw_files_preserved_untouched": [
+    "data/processed/forecasts_stage3.csv",
+    "data/processed/baseline_unit_state.csv",
+    "data/processed/stage2_uncertainty_draws.csv"
+  ],
+  "reconciliation_method": "Combined-sex 'both' predictions kept authoritative; population both set to pop_female + pop_male; female and male split via WHO GHE 2021 proxy ratios (WHO_GHE_SEX_SPLITS, ASM-04b) and UN WPP 2024 sex populations. Proxy-derived estimates are not direct sex-stratified HAP-COPD surveillance series.",
+  "full_precision_checks": {
+    "max_float64_pop_err": 0.0,
+    "max_float64_num_err": 1.862645149230957e-09,
+    "max_float64_rate_weighted_err": 2.2737367544323206e-13
+  },
+  "max_abs_csv_num_discrepancy": 1.862645149230957e-09,
+  "max_abs_csv_draw_discrepancy": 0.010000000009313226,
+  "file_name": "s2_sex_reconciliation_audit.csv"
+}

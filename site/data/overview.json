@@ -3,152 +3,152 @@
   "subtitle": "Forecasting Burden. Optimising Intervention. Planning for 2040.",
   "kpis": [
     {
-      "id": "countries",
-      "label": "Countries Analysed",
-      "value": "5",
-      "detail": "India, Nepal, Pakistan, Bangladesh, Bhutan (GBD South Asia panel)",
-      "status": "verified_scope"
+      "id": "bau_2040",
+      "label": "2040 BAU Burden (F+M Sum)",
+      "value": "2.70M",
+      "detail": "2,699,837 DALYs [2.03M\u20133.37M]; 500 MC draws mean 2,714,694",
+      "status": "real"
     },
     {
-      "id": "historical_period",
-      "label": "Historical Study Period",
-      "value": "1990\u20132023",
-      "detail": "34 annual years (GBD 2023); WHO clean cooking extends to 2024",
-      "status": "verified_scope"
+      "id": "max_averted",
+      "label": "Max NSGA-II DALYs Averted",
+      "value": "453.5k",
+      "detail": "16.8% reduction (to 2.25M) at $3,097.3M spend",
+      "status": "real"
     },
     {
-      "id": "forecast_horizon",
-      "label": "Forecast Horizon",
-      "value": "2040",
-      "detail": "2024\u20132040 projections; decision periods P1 (2026\u201330), P2 (2031\u201335), P3 (2036\u201340)",
-      "status": "verified_scope"
+      "id": "knee_plan",
+      "label": "NSGA-II Knee Plan",
+      "value": "311.7k averted",
+      "detail": "11.5% reduction (2.39M DALYs) at $1,695.9M; eq gap 26.85",
+      "status": "real"
     },
     {
-      "id": "allocation_units",
-      "label": "Geographical Allocation Units",
-      "value": "4",
-      "detail": "IND_urban, IND_rural, NPL_urban, NPL_rural (48 decision vars)",
-      "status": "verified_scope"
+      "id": "budget_cap",
+      "label": "Real Budget Cap (50% Base)",
+      "value": "$5,985.7M",
+      "detail": "50% of $11,971.5M 2025 HH LPG fiscal gap; Scenario A saturates at $3,097.3M",
+      "status": "real"
     },
     {
-      "id": "interventions",
-      "label": "Intervention Categories",
-      "value": "4",
-      "detail": "LPG subsidy, Improved biomass, Electric induction, LPG/grid infra",
-      "status": "verified_scope"
+      "id": "mdp_advantage",
+      "label": "MDP Adaptive Policy (\u03bb=116)",
+      "value": "0.0% viol.",
+      "detail": "127.5k mean averted at $600.4M vs. 40.0% viol. for GA matched",
+      "status": "real"
     },
     {
-      "id": "planning_approaches",
-      "label": "Decision & Planning Methods",
-      "value": "4",
-      "detail": "NSGA-II (pymoo), Custom NumPy MDP, HTN Tree, STRIPS/PDDL (pyperplan)",
-      "status": "verified_scope"
+      "id": "real_data",
+      "label": "Real Data & Parameters",
+      "value": "B-10 Complete",
+      "detail": "GBD 2023 + 1,585 WHO/DHS records + REAL_V1_2024USD + 18 sensitivity runs",
+      "status": "real"
     }
   ],
   "objectives": [
     {
-      "id": "OBJ-1",
-      "title": "Historical Epidemiology (Stage 1)",
-      "summary": "Quantify 1990\u20132023 HAP-attributable COPD deaths, DALYs, age-standardized rates, EAPC, and joinpoint inflection years across 5 South Asian countries, highlighting India and Nepal.",
-      "status": "Pending GBD 2023 export; real WHO/DHS clean-cooking series ready"
+      "id": "rq1",
+      "title": "Historical Trends (1990\u20132023)",
+      "summary": "All five South Asian countries saw steep DALY ASR declines (Bhutan \u221294.2%, India \u221256.4%, Pakistan \u221244.0%, Nepal \u221240.0%, Bangladesh \u221232.2%), yet population ageing raised absolute DALY counts in India (+24.8% to 6.96M) and Nepal (+75.7% to 254.0k).",
+      "status": "complete"
     },
     {
-      "id": "OBJ-2",
-      "title": "Burden Forecasting to 2040 (Stage 2)",
-      "summary": "Benchmark statistical baselines (ARIMA, ETS, adapted Poisson rate GLM) against panel ML models (Random Forest, HistGradientBoosting) via expanding-window rolling-origin CV and calibrate a fast exposure\u2013response surrogate.",
-      "status": "Methodology locked; awaiting Stage 2 implementation & exports"
+      "id": "rq2",
+      "title": "Forecasting to 2040",
+      "summary": "B-12 multi-horizon CV fixes ETS (0 failures): fixed ETS (47.73/48.78 MAE; +53.9%/+52.8% skill) and ARIMA (49.33; +52.3% skill) lead short-term accuracy, while smooth Log-OLS (4-unit CV MAE 102.34 vs. 151.00 for HistGBDT; slope \u22122.1933 \u00b1 0.2557 SE) replaces HistGBDT as the Stage 3 counterfactual surrogate.",
+      "status": "complete"
     },
     {
-      "id": "OBJ-3",
-      "title": "Multi-Objective Resource Allocation (Stage 3)",
-      "summary": "Use NSGA-II to minimise projected 2040 DALYs, total intervention cost ($M), and population-weighted female\u2013male ASR burden gap across 4 units \u00d7 4 interventions \u00d7 3 periods under budget, cap, ceiling, and q < p infra constraints.",
-      "status": "Implemented & verified on synthetic MOCK_V1"
+      "id": "rq3",
+      "title": "Multi-Objective Optimisation",
+      "summary": "5-seed NSGA-II discovers 251 feasible Scenario A Pareto plans (combined HV 2.7965e+10), beating all three heuristic/random baselines. Knee saves 311.7k DALYs ($1,695.9M); DALY-min (=Equity-min) saves 453.5k DALYs ($3,097.3M) and lowers WHO-reconciled equity gap from 31.41 to 24.91/100k.",
+      "status": "complete"
     },
     {
-      "id": "OBJ-4",
-      "title": "Sequential & Symbolic Planning (Stage 4)",
-      "summary": "Compare an adaptive stochastic NumPy MDP policy, a hierarchical task network (HTN), and a STRIPS/PDDL classical planner against open-loop NSGA-II schedules on equal-footing stochastic rollouts.",
-      "status": "Implemented & verified on synthetic MOCK_V1"
+      "id": "rq4",
+      "title": "Sequential Adaptive Planning",
+      "summary": "Recalibrated Finite-Horizon MDP (\u03bb=116.0, 22,136 states) achieves 0.0% constraint violations across 1,000 uptake-shock rollouts ($600.4M mean cost, 127.5k averted), whereas open-loop GA achieves higher mean scalarized value (90.7k vs. 46.7k) with 40.0% cap/ceiling overshoot under 1.25\u00d7 shocks.",
+      "status": "complete"
     }
   ],
   "research_questions": [
     {
       "id": "RQ1",
-      "question": "How have HAP-attributable COPD deaths and DALYs changed in India, Nepal, and wider South Asia from 1990 to 2023, by sex and age-standardised metrics?",
-      "note": "Repository methodology compromise uses aggregated all-age burden and age-standardized rates rather than five-year age-specific burden trajectories."
+      "question": "How have HAP-attributable COPD deaths and DALYs changed in India, Nepal, and wider South Asia from 1990 to 2023 by sex?",
+      "note": "Answered using GBD 2023 + UN WPP 2024 + NFHS/Census rural-urban apportionment across 5 countries and 4 subnational units."
     },
     {
       "id": "RQ2",
-      "question": "Which forecasting approach (statistical or ML) projects attributable burden to 2040 most reliably on held-out rolling-origin validation data?",
-      "note": "Evaluates ARIMA, ETS, adapted Poisson rate GLM, Random Forest, and HistGradientBoosting on MAE, RMSE, and MASE."
+      "question": "Which forecasting approach (statistical or ML) projects attributable burden to 2040 most reliably on held-out rolling windows?",
+      "note": "Answered via B-12 multi-horizon CV (fixed ETS 47.73 MAE / +53.9% skill vs ARIMA 49.33; smooth Log-OLS surrogate \u22122.1933 \u00b1 0.2557 replacing HistGBDT + 500 draws)."
     },
     {
       "id": "RQ3",
-      "question": "Under a fixed budget, which intervention allocation minimises projected 2040 burden, and how does it trade off against cost and sex-based equity?",
-      "note": "Sex-specific burden response uses a proxy elasticity multiplier due to lack of sex-disaggregated intervention uptake data."
+      "question": "Under a real 50% fiscal clean-cooking budget ($5,985.73M), which allocation minimises projected 2040 DALYs vs. cost and urban\u2013rural equity?",
+      "note": "Answered via 5-seed NSGA-II (251 Pareto plans), 500-draw joint MC re-evaluation, and 8-factor sensitivity (Scenario A vs. B1/B2 & Alt B opex)."
     },
     {
       "id": "RQ4",
-      "question": "How does an adaptive planning policy (MDP) compare with a one-off optimised allocation (GA) and symbolic plans (HTN / PDDL)?",
-      "note": "Tested across 1,000 Common-Random-Numbers uptake shock rollouts ([0.5x, 1.0x, 1.25x] with probs [0.15, 0.70, 0.15])."
+      "question": "How does an adaptive MDP policy compare against open-loop GA schedules, HTN decomposition, and classical PDDL planning?",
+      "note": "Answered via 1,000 CRN rollouts under \u00b1uptake shocks, showing MDP's 0.0% violation robustness vs. 40.0% (GA) and 26.9% (PDDL)."
     }
   ],
   "pipeline_nodes": [
     {
-      "id": "data",
-      "step": "01",
-      "title": "Historical GBD & Clean-Cooking Data",
-      "subtitle": "GBD 2023 \u00b7 UN WPP 2024 \u00b7 UN WUP 2025 \u00b7 WHO SDG 7.1.2",
-      "status": "partial",
-      "target": "historical"
+      "id": "stage0",
+      "step": "Stage 0",
+      "title": "Data Ingestion",
+      "subtitle": "GBD 2023, WPP 2024, WHO, NFHS/NDHS",
+      "status": "complete",
+      "target": "#/historical"
     },
     {
       "id": "stage1",
-      "step": "02",
-      "title": "Historical Burden Analysis",
-      "subtitle": "ASRs \u00b7 EAPC \u00b7 Joinpoint (pwlf) \u00b7 HAP Share",
-      "status": "pending",
-      "target": "historical"
+      "step": "Stage 1",
+      "title": "Historical Trends",
+      "subtitle": "ASRs, EAPC & PWLF breakpoints",
+      "status": "complete",
+      "target": "#/historical"
     },
     {
       "id": "stage2",
-      "step": "03",
-      "title": "Forecasting to 2040",
-      "subtitle": "ARIMA \u00b7 ETS \u00b7 Poisson GLM \u00b7 RF \u00b7 HistGBDT",
-      "status": "pending",
-      "target": "forecast"
+      "step": "Stage 2",
+      "title": "2040 Forecasting",
+      "subtitle": "CV, HistGBDT surrogate & 500 draws",
+      "status": "complete",
+      "target": "#/forecast"
+    },
+    {
+      "id": "params",
+      "step": "Contract 4",
+      "title": "Intervention Params",
+      "subtitle": "REAL_V1_2024USD & Scenario A/B",
+      "status": "complete",
+      "target": "#/assumptions"
     },
     {
       "id": "stage3",
-      "step": "04",
+      "step": "Stage 3",
       "title": "NSGA-II Optimisation",
-      "subtitle": "48 Vars \u00b7 3 Objectives \u00b7 Pareto Front",
-      "status": "mock_complete",
-      "target": "optimise"
+      "subtitle": "251 Pareto plans & 500-draw MC",
+      "status": "complete",
+      "target": "#/optimise"
     },
     {
-      "id": "mdp",
-      "step": "05",
-      "title": "MDP Decision Planning",
-      "subtitle": "Custom NumPy Backward Induction & VI",
-      "status": "mock_complete",
-      "target": "planning"
+      "id": "stage4",
+      "step": "Stage 4",
+      "title": "AI Planning",
+      "subtitle": "MDP (\u03bb=116), HTN & PDDL",
+      "status": "complete",
+      "target": "#/planning"
     },
     {
-      "id": "symbolic",
-      "step": "06",
-      "title": "HTN & STRIPS/PDDL",
-      "subtitle": "Decomposition Tree & pyperplan Solver",
-      "status": "mock_complete",
-      "target": "planning"
-    },
-    {
-      "id": "compare",
-      "step": "07",
-      "title": "Comparative Evaluation",
-      "subtitle": "1,000-Rollout Equal-Footing Stress Test",
-      "status": "mock_complete",
-      "target": "planning"
+      "id": "research",
+      "step": "Archive",
+      "title": "Research & Files",
+      "subtitle": "Methods, limitations & 60+ exports",
+      "status": "complete",
+      "target": "#/research"
     }
   ]
 }

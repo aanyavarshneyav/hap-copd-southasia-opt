@@ -378,7 +378,12 @@ def run_pddl_pipeline(
 
     pddl_dir = root / config["paths"]["pddl_dir"]
     domain_path = pddl_dir / "domain.pddl"
-    problem_path = pddl_dir / "problem_ind_npl.pddl"
+    existing_infra_prob = pddl_dir / "problem_ind_npl_existing_infra.pddl"
+    problem_path = (
+        existing_infra_prob
+        if (not np.all(evaluator._infra_enabled) and existing_infra_prob.exists())
+        else pddl_dir / "problem_ind_npl.pddl"
+    )
 
     tables_dir = root / config["paths"]["outputs_tables_dir"]
     tables_dir.mkdir(parents=True, exist_ok=True)

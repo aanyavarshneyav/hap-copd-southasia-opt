@@ -16,9 +16,9 @@
 | --- | --- | --- |
 | **M0: Repo, Interface & Mock Lock** | **Start (First Hour)** | Phase 0 merged; `configs/default.yaml` & `INTERFACES.md` locked; Aanya (or Aanya + Rudraksh together in hour 1) builds `*_mock.*` fixtures so Stage 3 / Planning work starts immediately. |
 | **M1: Data Validated & Mock Pipeline Working** | **Post-M0** | Raw exports logged in `manifest.json`; `make validate-data` passes; Stage 1 EAPC done; Aanya has working NSGA-II + MDP + HTN + PDDL running on mock data. |
-| **M2: Forecasting Complete & Real Handoff** | **Post-M1** | Stage 1 figures complete; Stage 2 CV benchmarks complete; real `forecasts_stage3.csv` + `surrogate.json` pass schema tests; flip `use_mock_forecasts: false`. |
-| **M3: Final Experiments & Sensitivity Freeze** | **Post-M2** | Literature assumptions sourced in `ASSUMPTIONS.md`; final Stage 3 Pareto front, MDP vs GA comparison, HTN/PDDL outputs, and sensitivity checks complete. |
-| **M4: Report & Final Reproduction** | **Post-M3** | `report/report.md` complete & converted to final format (`TODO(owner)`); `make check` and `make all` pass cleanly from a fresh `.venv`. |
+| **M2: Forecasting Complete & Real Handoff** | **Post-M1** | `done` — Stage 1 figures, Stage 2 CV (`s2_rolling_cv_metrics.csv`), `forecasts_stage3.csv`, `baseline_unit_state.csv`, `exposure_response_surrogate.json` & `stage2_uncertainty_draws.csv` exported and validated; `use_mock_forecasts: false`. |
+| **M3: Final Experiments & Sensitivity Freeze** | **Post-M2** | `done` — `REAL_V1_2024USD` sourced in `ASSUMPTIONS.md`; real Stage 3 Pareto front (`252` plans), MDP (`λ=116`), HTN (`9` leaves), PDDL (`7` steps), GA-vs-MDP (`1,000` rollouts), `500`-draw MC re-eval & `18` sensitivity runs complete. |
+| **M4: Report & Final Reproduction** | **Post-M3** | `done` — `report/report.md` & `report/executive_summary.md` complete; offline website (`site/`) updated to real data; `docs/REPRODUCIBILITY.md` added; real + mock checks verified. |
 
 ---
 
@@ -35,12 +35,12 @@
 | `A-05` | Stage 1 historical analysis: ASRs, EAPC, `pwlf` joinpoint, shares, heatmaps | Rudraksh (A) | `A-04` | `src/historical/run.py`, `outputs/tables/s1_*.csv`, `outputs/figures/s1_*.png` | `done` |
 | `A-06` | Stage 2 models (ARIMA, ETS, Poisson GLM APC, RF/HistGBDT) & rolling-origin CV | Rudraksh (A) | `A-04` | `src/forecast/models.py`, `src/forecast/cv.py`, `outputs/tables/s2_rolling_cv_metrics.csv` | `done` |
 | `A-07` | Export 2024–2040 forecasts with UI propagation, `forecasts_stage3.csv`, and `exposure_response_surrogate.json` | Rudraksh (A) | `A-06`, `A-02` | `data/processed/forecasts_stage3.csv`, `data/processed/exposure_response_surrogate.json` | `done` |
-| `A-08` | Re-evaluate top Pareto points from Stage 3 on full Stage 2 uncertainty draws | Rudraksh (A) | `A-07`, `B-02` | `outputs/tables/s3_pareto_reeval.csv` | `todo` |
+| `A-08` | Re-evaluate top Pareto points from Stage 3 on full Stage 2 uncertainty draws | Shared (`A` draws + `B` B-10 runner) | `A-07`, `B-02` | `outputs/tables/s3_pareto_reeval.csv` | `done` |
 | `B-01` | Build contract reader + fast surrogate objective/constraint evaluator against `*_mock.*` | Aanya (B) | `B-00` | `src/optimise/evaluator.py`, `tests/optimise/test_evaluator.py` | `done` |
 | `B-02` | Implement NSGA-II (`pymoo`) problem with budget, adoption & infra constraints, baselines & decision plots | Aanya (B) | `B-01` | `src/optimise/nsga2.py`, `src/optimise/baselines.py`, `src/optimise/run.py`, `src/viz/decision.py`, `tests/optimise/test_nsga2.py` | `done` |
 | `B-03` | Implement custom NumPy MDP value iteration / backward induction (`src/planning/mdp.py`) | Aanya (B) | `B-01` | `src/planning/mdp.py`, `tests/planning/test_mdp.py` | `done` |
 | `B-04` | Implement plain-Python HTN decomposition tree & STRIPS/PDDL files (`pyperplan`) | Aanya (B) | `P0-01` | `src/planning/htn.py`, `pddl/*.pddl`, `src/planning/pddl_runner.py`, `tests/planning/test_htn_pddl.py` | `done` |
 | `B-05` | Build equal-footing MDP vs GA stochastic rollout comparator & Pareto/plan visualisations | Aanya (B) | `B-02`, `B-03` | `src/planning/compare.py`, `src/viz/decision.py`, `outputs/figures/{s3,plan}_*.png` | `done` |
-| `B-06` | Switch `use_mock_forecasts: false`, run final Stage 3 + MDP + sensitivity analyses | Aanya (B) | `A-07`, `B-05` | `outputs/tables/s3_pareto_front.csv`, `outputs/tables/plan_mdp_vs_ga_comparison.csv` | `todo` |
-| `S-01` | Literature review to replace `placeholder: needs literature` costs & effectiveness in `ASSUMPTIONS.md` | Shared | `P0-01` | `docs/ASSUMPTIONS.md` | `todo` |
-| `S-02` | Draft sections 1–3 of `report/report.md` in parallel; integrate final figures/tables & convert format | Shared | `A-08`, `B-06`, `S-01` | `report/report.md` (+ final submission artifact) | `todo` |
+| `B-06` | Switch `use_mock_forecasts: false`, run final Stage 3 + MDP + sensitivity analyses | Aanya (B) | `A-07`, `B-05` | `outputs/tables/s3_pareto_front.csv`, `outputs/tables/comp_ga_vs_mdp.csv`, `outputs/final_real_data/` | `done` |
+| `S-01` | Literature review to replace `placeholder: needs literature` costs & effectiveness in `ASSUMPTIONS.md` | Aanya (B) + Shared | `P0-01` | `docs/ASSUMPTIONS.md`, `configs/intervention_params.json`, `research/person_b_inputs/` | `done` *(excl. null infra)* |
+| `S-02` | Write final `report/report.md`, `report/executive_summary.md`, update `site/` to real data & `docs/REPRODUCIBILITY.md` | Aanya (B) + Shared | `A-08`, `B-06`, `S-01` | `report/report.md`, `report/executive_summary.md`, `site/`, `docs/REPRODUCIBILITY.md` | `done` |

@@ -1,0 +1,5 @@
+location,country,residence,baseline_year,population_total,population_female_share,clean_fuel_share_init,lpg_infra_ready_init,grid_ready_init,bau_dalys_2040_female,bau_dalys_2040_male,bau_asr_2040_female,bau_asr_2040_male,is_mock,data_version
+IND_urban,India,urban,2025,544213537.1,0.4844,0.961,True,True,462795.89,402890.39,136.0515,112.6818,False,GBD_2023_WPP_2024
+IND_rural,India,rural,2025,919651989.9,0.4844,0.6577,True,False,863550.39,751770.21,191.5116,158.6155,False,GBD_2023_WPP_2024
+NPL_urban,Nepal,urban,2025,6768611.5,0.5229,0.6373,True,True,11948.3,8532.16,231.2494,181.3033,False,GBD_2023_WPP_2024
+NPL_rural,Nepal,rural,2025,22849508.5,0.5229,0.2492,False,False,115717.34,82632.58,959.8341,752.5253,False,GBD_2023_WPP_2024

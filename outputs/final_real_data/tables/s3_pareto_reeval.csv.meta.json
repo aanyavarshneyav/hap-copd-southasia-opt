@@ -1,0 +1,28 @@
+{
+  "artifact": "s3_pareto_reeval.csv",
+  "source": "src.optimise.final_real_suite.run_pareto_uncertainty_reevaluation",
+  "generated_at": "2026-11-17T02:19:53Z",
+  "is_mock": false,
+  "warning_mock_inputs": false,
+  "data_version": "GBD_2023_WPP_2024",
+  "parameter_version": "REAL_V1_2024USD",
+  "seeds": {
+    "global": 42,
+    "numpy": 42,
+    "sklearn": 42,
+    "pymoo": 42,
+    "mdp": 42
+  },
+  "stage3_seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "total_budget_usd_millions": 5985.73,
+  "mdp_cost_weight_lambda": 116.0,
+  "scenario_assumptions": "500 real Stage 2 2040 MC draws (stage2_uncertainty_draws.csv) + log-linear surrogate residual SD=0.08.",
+  "n_draws": 500,
+  "n_plans": 9
+}

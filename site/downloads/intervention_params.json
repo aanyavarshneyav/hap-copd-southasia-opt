@@ -1,0 +1,205 @@
+{
+  "schema_version": "1.0",
+  "is_mock": false,
+  "data_version": "REAL_V1_2024USD",
+  "generated_at": "2026-11-17T03:30:00Z",
+  "note": "Final real-data Contract 4 intervention parameters (Scenario A: public-sector fiscal perspective, one-time 5-yr cohort packages, observed HH baseline, existing infrastructure-ready units only with unresolved infra_lpg_grid=null disabled). Scenario budget and co-financing assumptions are NOT verified government appropriations or policy recommendations.",
+  "total_budget_usd_millions": 5985.73,
+  "infra_build_threshold": 0.5,
+  "apply_cost_discounting": false,
+  "discount_factor": 0.774,
+  "period_order": [
+    "P1",
+    "P2",
+    "P3"
+  ],
+  "coverage_ceiling": {
+    "IND_urban": 0.99,
+    "IND_rural": 0.95,
+    "NPL_urban": 0.98,
+    "NPL_rural": 0.95
+  },
+  "baseline_clean_fuel_households": {
+    "IND_urban": 0.897,
+    "IND_rural": 0.432,
+    "NPL_urban": 0.5846,
+    "NPL_rural": 0.2036
+  },
+  "coverage_bridge_factor": {
+    "IND_urban": 1.0,
+    "IND_rural": 1.0,
+    "NPL_urban": 1.0,
+    "NPL_rural": 1.0
+  },
+  "effectiveness": {
+    "IND_urban": {
+      "lpg_subsidy": 0.88,
+      "improved_biomass": 0.25,
+      "electric_induction": 0.92,
+      "infra_lpg_grid": 0.0
+    },
+    "IND_rural": {
+      "lpg_subsidy": 0.78,
+      "improved_biomass": 0.25,
+      "electric_induction": 0.85,
+      "infra_lpg_grid": 0.0
+    },
+    "NPL_urban": {
+      "lpg_subsidy": 0.86,
+      "improved_biomass": 0.25,
+      "electric_induction": 0.9,
+      "infra_lpg_grid": 0.0
+    },
+    "NPL_rural": {
+      "lpg_subsidy": 0.78,
+      "improved_biomass": 0.25,
+      "electric_induction": 0.85,
+      "infra_lpg_grid": 0.0
+    }
+  },
+  "unit_costs_usd_millions": {
+    "IND_urban": {
+      "lpg_subsidy": 11963.51,
+      "improved_biomass": 2798.79,
+      "electric_induction": 3303.2,
+      "infra_lpg_grid": null
+    },
+    "IND_rural": {
+      "lpg_subsidy": 20120.71,
+      "improved_biomass": 4707.12,
+      "electric_induction": 5555.45,
+      "infra_lpg_grid": null
+    },
+    "NPL_urban": {
+      "lpg_subsidy": 552.11,
+      "improved_biomass": 103.65,
+      "electric_induction": 146.66,
+      "infra_lpg_grid": null
+    },
+    "NPL_rural": {
+      "lpg_subsidy": 292.11,
+      "improved_biomass": 48.74,
+      "electric_induction": 68.97,
+      "infra_lpg_grid": null
+    }
+  },
+  "max_adoption_per_period": {
+    "IND_urban": {
+      "lpg_subsidy": {
+        "P1": 0.05,
+        "P2": 0.05,
+        "P3": 0.05
+      },
+      "improved_biomass": {
+        "P1": 0.2,
+        "P2": 0.2,
+        "P3": 0.2
+      },
+      "electric_induction": {
+        "P1": 0.1,
+        "P2": 0.15,
+        "P3": 0.15
+      },
+      "infra_lpg_grid": {
+        "P1": 0.0,
+        "P2": 0.0,
+        "P3": 0.0
+      }
+    },
+    "IND_rural": {
+      "lpg_subsidy": {
+        "P1": 0.24,
+        "P2": 0.24,
+        "P3": 0.2
+      },
+      "improved_biomass": {
+        "P1": 0.2,
+        "P2": 0.2,
+        "P3": 0.2
+      },
+      "electric_induction": {
+        "P1": 0.1,
+        "P2": 0.15,
+        "P3": 0.15
+      },
+      "infra_lpg_grid": {
+        "P1": 0.0,
+        "P2": 0.0,
+        "P3": 0.0
+      }
+    },
+    "NPL_urban": {
+      "lpg_subsidy": {
+        "P1": 0.15,
+        "P2": 0.15,
+        "P3": 0.15
+      },
+      "improved_biomass": {
+        "P1": 0.2,
+        "P2": 0.2,
+        "P3": 0.2
+      },
+      "electric_induction": {
+        "P1": 0.1,
+        "P2": 0.15,
+        "P3": 0.15
+      },
+      "infra_lpg_grid": {
+        "P1": 0.0,
+        "P2": 0.0,
+        "P3": 0.0
+      }
+    },
+    "NPL_rural": {
+      "lpg_subsidy": {
+        "P1": 0.1,
+        "P2": 0.15,
+        "P3": 0.15
+      },
+      "improved_biomass": {
+        "P1": 0.2,
+        "P2": 0.2,
+        "P3": 0.2
+      },
+      "electric_induction": {
+        "P1": 0.1,
+        "P2": 0.15,
+        "P3": 0.15
+      },
+      "infra_lpg_grid": {
+        "P1": 0.0,
+        "P2": 0.0,
+        "P3": 0.0
+      }
+    }
+  },
+  "parameter_provenance": {
+    "cost_perspective": "Public-sector programme/fiscal budget perspective (2024 USD, Alternative A one-time 5-year cohort package, apply_cost_discounting=false).",
+    "households_2025_derived": {
+      "IND_urban": 124390773,
+      "IND_rural": 209205395,
+      "NPL_urban": 4606688,
+      "NPL_rural": 2166519
+    },
+    "baseline_clean_fuel_households_source": "India NFHS-5 (2019-21, DHS HC_CKFL_H_CLN, 2020) & Nepal NPHC 2021 Table 07 (conventional households).",
+    "baseline_clean_fuel_population_note": "Kept separate in Contract 1/2 (WHO SDG 7.1.2 people-denominated, 2040 BAU = 0.985/0.850/0.820/0.480); bridged via delta_pop = coverage_bridge_factor * delta_hh.",
+    "budget_scenario": {
+      "active_scenario": "H_observed_hh_lpg_fiscal_50pct_Base",
+      "full_gap_100pct_usd_millions": 11971.47,
+      "base_50pct_usd_millions": 5985.73,
+      "tight_25pct_usd_millions": 2992.87,
+      "status": "scenario_assumption_not_approved_appropriation"
+    },
+    "unit_cost_status": {
+      "lpg_subsidy": "derived_from_sourced_components (MoPNG PMUY $96.18/HH; NOC NPR 450/cyl + assumed NPR 2,500/4,500 upfront deposit -> $119.85/$134.83/HH)",
+      "improved_biomass": "scenario_assumption (50% public MNRE/AEPC CFA on $45/HH 5-yr societal hardware+O&M = $22.50/HH; 100% societal retained in sensitivity)",
+      "electric_induction": "scenario_assumption (50% public hardware+wiring co-finance = $26.555/HH IND, $31.835/HH NPL; India has no central induction subsidy; 100% appliance package & electricity tariff gap documented in sensitivity)",
+      "infra_lpg_grid": "unresolved_gap (null; disabled in Scenario A existing-infra-ready baseline; proxy sensitivity tested separately in Scenario B)"
+    },
+    "effectiveness_status": {
+      "lpg_subsidy": "derived_stack_adjusted (HAPIN personal PM2.5 + CEEW rural stacking)",
+      "improved_biomass": "derived_ier_copd_paf (0.25 central midpoint of [0.15, 0.30]; raw kitchen PM2.5 0.32-0.50 tested in sensitivity)",
+      "electric_induction": "derived_stack_adjusted (WHO IAQ + ESMAP/MECS outage/stacking adjustment)"
+    }
+  }
+}

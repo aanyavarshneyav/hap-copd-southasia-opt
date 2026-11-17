@@ -3,17 +3,19 @@
   "use strict";
 
   async function render(container) {
-    const data = await global.App.loadJSON("optimise_mock.json");
+    const data = await global.App.loadJSON("optimise.json");
     const { esc, term, accordion, fmtNum, fmtMillions, fmtUsdM } = global.App;
 
     const solutions = data.pareto_solutions || [];
     const selectedPlans = data.selected_plans || [];
     const baselines = data.baseline_comparison || [];
     const hvConv = data.hypervolume_convergence || [];
-    const budgetSweep = data.budget_sweep || [];
-    const etaSweep = data.eta_biomass_sweep || [];
-    const capSweep = data.induction_cap_sweep || [];
-    const bridgeSens = data.bridge_sensitivity || [];
+    const reevalRows = data.pareto_reeval || [];
+    const sensReal = data.sensitivity_real || [];
+    const opexSens = data.recurring_opex_sensitivity || [];
+    const nsgaRow = baselines.find((b) => String(b.method || "").startsWith("nsga2")) || baselines[0] || {};
+    const combinedHvB = Number(nsgaRow.hypervolume || 16540701192) / 1e9;
+    const bauMean = Number(data.bau_2040?.dalys_2040_mean || 2750091.39);
 
     const planColors = {
       knee: "#DF8B6C",
@@ -45,28 +47,27 @@
       activeSolutionId: kneeSol ? kneeSol.solution_id : 0,
       breakdownView: "heatmap", // "heatmap" | "bars"
       heatmapMode: "spend", // "spend" | "alloc"
-      sweepTab: "budget", // "budget" | "eta" | "cap" | "bridge"
+      sweepTab: "mc_reeval", // "mc_reeval" | "sens_all" | "opex"
     };
 
     const mathAccordionBody = `
       <div class="grid grid-3" style="font-size:0.84rem; color:var(--text-secondary); margin-bottom:1rem;">
-        <div><strong style="color:var(--text-primary);">f₁(x) · 2040 DALYs:</strong> Sum of projected 2040 female &amp; male ${term("DALYs")} across <code>IND_urban</code>, <code>IND_rural</code>, <code>NPL_urban</code>, <code>NPL_rural</code> evaluated via the Contract 3 log-linear surrogate.</div>
-        <div><strong style="color:var(--text-primary);">f₂(x) · Total Cost ($M):</strong> Undiscounted 5-year cohort package spend plus binary <code>infra_lpg_grid</code> capex (<code>x ≥ 0.5</code>), bounded by the <code>$500.0M</code> mock cap.</div>
-        <div><strong style="color:var(--text-primary);">f₃(x) · Equity Gap (Proxy):</strong> Population-weighted <code>|ASR_female - ASR_male|</code> per 100k using a proxy female-to-male exposure elasticity multiplier.</div>
+        <div><strong style="color:var(--text-primary);">f₁(x) · 2040 DALYs:</strong> Sum of projected 2040 female &amp; male ${term("DALYs")} across <code>IND_urban</code>, <code>IND_rural</code>, <code>NPL_urban</code>, <code>NPL_rural</code> evaluated via the Contract 3 log-linear surrogate (BAU = ${fmtMillions(bauMean, 2)}).</div>
+        <div><strong style="color:var(--text-primary);">f₂(x) · Total Cost ($M):</strong> 5-year cohort package spend (Alt A 1-time programme capex) plus binary <code>infra_lpg_grid</code> capex (disabled / null in Scenario A), bounded by the <code>$${fmtNum(data.budget_cap_usd_millions, 2)}M</code> 50% fiscal cap.</div>
+        <div><strong style="color:var(--text-primary);">f₃(x) · Equity Gap (Proxy):</strong> Population-weighted <code>|ASR_female - ASR_male|</code> per 100k using proxy female-to-male exposure elasticity (<code>r_fm = 1.05</code>).</div>
       </div>
       <ul class="callout-list">
         <li><strong>Decision Space (48 Variables):</strong> 4 units × 4 interventions × 3 five-year periods (<code>P1: 2026–30</code>, <code>P2: 2031–35</code>, <code>P3: 2036–40</code>).</li>
-        <li><strong>Four Hard Constraints + Stage3Repair:</strong> Total budget cap, per-period adoption caps, coverage ceilings, and strictly-earlier infrastructure prerequisites (<code>q &lt; p</code>, <code>DEC-021</code>).</li>
-        <li><strong>Multi-Seed Setup:</strong> 5 seeds (<code>42–46</code>), population <code>80</code>, <code>100</code> generations (40,000 total evaluations) → 219 deduplicated non-dominated feasible solutions.</li>
+        <li><strong>Four Hard Constraints + Stage3Repair:</strong> Total budget cap ($5,985.73M), per-period adoption caps, coverage ceilings, and strictly-earlier infrastructure prerequisites (<code>q &lt; p</code>, Scenario A forces <code>infra_lpg_grid = 0</code>).</li>
+        <li><strong>Multi-Seed Setup:</strong> 5 seeds (<code>42–46</code>), population <code>80</code>, <code>100</code> generations (40,000 evaluations) → <strong>${solutions.length}</strong> deduplicated non-dominated feasible plans.</li>
       </ul>
     `;
 
     const sweepsAndBaselinesBody = `
       <div class="tabs-bar" role="tablist">
-        <button type="button" class="tab-btn active" data-sweep="budget">Budget Envelope (25/50/100%)</button>
-        <button type="button" class="tab-btn" data-sweep="eta">Biomass Effectiveness (η = 0.10–0.48)</button>
-        <button type="button" class="tab-btn" data-sweep="cap">Induction Cap</button>
-        <button type="button" class="tab-btn" data-sweep="bridge">Bridge Factor (0.8–1.2)</button>
+        <button type="button" class="tab-btn active" data-sweep="mc_reeval">500-Draw Joint Uncertainty</button>
+        <button type="button" class="tab-btn" data-sweep="sens_all">8-Factor Sensitivity Suite (18 Runs · Scen. B1/B2)</button>
+        <button type="button" class="tab-btn" data-sweep="opex">Alt B Recurring LPG Opex</button>
       </div>
       <div id="sweep-content-mount" style="margin-bottom:1.5rem;"></div>
 
@@ -74,11 +75,11 @@
       <div class="grid grid-2" style="margin-bottom:1rem;">
         <div>
           <div id="chart-hv-conv" class="chart-box-compact"></div>
-          <div class="chart-caption"><span>5-seed HV convergence (100 generations)</span><span>Combined HV: 33.98B</span></div>
+          <div class="chart-caption"><span>5-seed HV convergence (100 generations)</span><span>Combined HV: ${combinedHvB.toFixed(2)}B</span></div>
         </div>
         <div>
           <div id="chart-baselines" class="chart-box-compact"></div>
-          <div class="chart-caption"><span>NSGA-II beats Random Search (+16.9% HV) &amp; Greedy/Proportional (&gt;50%)</span><span>MOCK_V1</span></div>
+          <div class="chart-caption"><span>NSGA-II beats Random Search, Equal Budget &amp; Proportional Greedy</span><span>REAL_V1_2024USD</span></div>
         </div>
       </div>
       <div class="table-wrap">
@@ -122,8 +123,8 @@
         <div class="page-header-top">
           <span class="page-eyebrow">05 · Stage 3 Multi-Objective Resource Allocation</span>
           <div class="page-header-meta" style="margin-top:0;">
-            <span class="badge badge-mock">SYNTHETIC DATA — MOCK_V1</span>
-            <span class="badge badge-derived">219 Pareto Solutions</span>
+            <span class="badge badge-real">REAL DATA · GBD 2023 + REAL_V1_2024USD</span>
+            <span class="badge badge-derived">${solutions.length} Pareto Solutions (Scenario A)</span>
           </div>
         </div>
         <h1 class="page-title">Multi-Objective Optimisation (NSGA-II)</h1>
@@ -132,15 +133,15 @@
         </p>
       </header>
 
-      ${global.App.mockBanner(
-      "SYNTHETIC DATA — DEMONSTRATION ONLY (MOCK_V1)",
-      "All Pareto points, $500M mock budget caps, and 2040 DALY projections (BAU = 5.57M) come from deterministic MOCK_V1 placeholders. Do not interpret as real policy findings."
+      ${global.App.infoBanner(
+      "VALIDATED & RECONCILED REAL-DATA OPTIMISATION (SCENARIO A · LOG-OLS SURROGATE)",
+      "Uses REAL_V1_2024USD unit costs, 50% fiscal cap ($5,985.73M), sex-reconciled 2040 BAU = 2.70M DALYs (F+M = both), and pooled Smooth Log-OLS counterfactual surrogate (-2.1933 +/- 0.2557 SE). Scenario A disables new infra builds so unready NPL_rural relies on improved biomass; Scenario B1/B2 infra proxies unlock +59.6k more DALYs in sensitivity."
     )}
 
       <div class="takeaway-bar">
         <span class="takeaway-tag">Key Trade-Off</span>
         <div>
-          Moving from <strong>Cost-Minimal</strong> ($6.0M) to the <strong>Knee</strong> compromise ($120.1M) averts <strong>1.17M DALYs</strong> via low-cost rural biomass and urban LPG. Reaching <strong>DALY-Minimal</strong> ($394.9M) averts <strong>2.04M DALYs</strong> and cuts the ASR equity gap to 24.0/100k by building rural infrastructure in P1.
+          Moving from <strong>Cost-Minimal</strong> ($70.8M, 59.4k averted) to the <strong>Knee</strong> compromise ($1,695.9M) averts <strong>311.7k DALYs</strong>. Reaching <strong>DALY-Minimal (= Equity-Minimal)</strong> ($3,097.3M) averts <strong>453.5k DALYs</strong> (16.8% reduction) and lowers the WHO GHE reconciled ASR gap from 31.41 to 24.91/100k, saturating below the $5,985.7M budget due to 2040-BAU headroom limits.
         </div>
       </div>
 
@@ -149,7 +150,7 @@
         <div class="card">
           <div class="card-header">
             <div>
-              <h2 class="card-title" id="pareto-title">3D Pareto Trade-Off Surface (219 Feasible Plans)</h2>
+              <h2 class="card-title" id="pareto-title">3D Pareto Trade-Off Surface (${solutions.length} Feasible Plans)</h2>
               <p class="card-subtitle">Click any solution marker (or choose a representative plan below) to reveal its 4-unit allocation breakdown</p>
             </div>
             <div class="btn-group">
@@ -164,7 +165,7 @@
 
           <div class="chart-caption">
             <span><strong>Three Objectives (Minimise All):</strong> 2040 DALYs (count) · Total Cost (USD Millions) · Population-weighted Female–Male ${term("ASR")} Gap (per 100k, proxy).</span>
-            <span><strong>Source:</strong> <code>outputs/tables/s3_pareto_front_mock.csv</code> (5 seeds, MOCK_V1).</span>
+            <span><strong>Source:</strong> <code>outputs/tables/s3_pareto_front.csv</code> (5 seeds, REAL_V1_2024USD).</span>
           </div>
         </div>
       </section>
@@ -221,8 +222,8 @@
 
       <!-- Level 3: Expandable Technical Details -->
       ${accordion(
-          "Sensitivity Sweeps, Baseline Heuristics &amp; Hypervolume Convergence",
-          '<span class="badge badge-mock">MOCK_V1 Benchmarks</span>',
+          "Uncertainty Re-Evaluation (500 Draws), 8-Factor Sensitivity &amp; Baseline Benchmarks",
+          '<span class="badge badge-real">18 Real Scenarios + 500 MC Draws</span>',
           sweepsAndBaselinesBody
         )}
       ${accordion(
@@ -238,7 +239,7 @@
       const titleEl = document.getElementById("pareto-title");
 
       if (state.paretoView === "3d") {
-        titleEl.textContent = "3D Pareto Trade-Off Surface (219 Feasible Plans)";
+        titleEl.textContent = `3D Pareto Trade-Off Surface (${solutions.length} Feasible Plans)`;
         const cloud = {
           x: nonSelected.map((s) => s.total_cost_usd_millions),
           y: nonSelected.map((s) => s.dalys_2040_mean),
@@ -246,7 +247,7 @@
           customdata: nonSelected.map((s) => s.solution_id),
           mode: "markers",
           type: "scatter3d",
-          name: "Pareto Front (219 pts)",
+          name: `Pareto Front (${solutions.length} pts)`,
           marker: {
             size: 4,
             color: nonSelected.map((s) => s.total_cost_usd_millions),
@@ -257,7 +258,7 @@
             ],
             opacity: 0.86,
           },
-          hovertemplate: "<b>Solution #%{customdata} (MOCK_V1)</b><br>Cost: $%{x:.1f}M<br>2040 DALYs: %{y:,.0f}<br>ASR Gap: %{z:.2f}/100k<extra></extra>",
+          hovertemplate: "<b>Solution #%{customdata}</b><br>Cost: $%{x:.1f}M<br>2040 DALYs: %{y:,.0f}<br>ASR Gap: %{z:.2f}/100k<extra></extra>",
         };
         const selTraces = selected.map((s, idx) => {
           const sp = selectedPlans[idx];
@@ -291,7 +292,7 @@
         }[state.paretoView];
 
         const [xKey, yKey, xTitle, yTitle, chartTitle] = cfg;
-        titleEl.textContent = `${chartTitle} (219 Feasible Plans)`;
+        titleEl.textContent = `${chartTitle} (${solutions.length} Feasible Plans)`;
 
         const cloud = {
           x: nonSelected.map((s) => s[xKey]),
@@ -376,7 +377,7 @@
         <div class="kpi-card">
           <div class="kpi-label">Total Cost</div>
           <div class="kpi-value">${fmtUsdM(sol.total_cost_usd_millions, 2)}</div>
-          <div class="kpi-detail">${((sol.total_cost_usd_millions / data.budget_cap_usd_millions) * 100).toFixed(1)}% of $500M mock cap</div>
+          <div class="kpi-detail">${((sol.total_cost_usd_millions / data.budget_cap_usd_millions) * 100).toFixed(1)}% of $${fmtNum(data.budget_cap_usd_millions, 1)}M 50% cap</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">2040 DALYs [95% UI]</div>
@@ -418,8 +419,8 @@
           ? `Solution #${sol.solution_id} — Allocation Spend Heatmap ($M)`
           : `Solution #${sol.solution_id} — Decision Variable Heatmap (x ∈ [0, 1])`;
         capEl.innerHTML = isSpend
-          ? "<span><strong>Unit:</strong> USD Millions per (unit, intervention, period) cell (MOCK_V1).</span><span><strong>Source:</strong> Decoded via <code>decode_allocation_spend()</code>.</span>"
-          : "<span><strong>Unit:</strong> Decision variable x (coverage increment or infra indicator ≥ 0.50).</span><span><strong>Source:</strong> <code>s3_pareto_front_mock.csv</code>.</span>";
+          ? "<span><strong>Unit:</strong> USD Millions per (unit, intervention, period) cell (REAL_V1_2024USD).</span><span><strong>Source:</strong> Decoded via <code>decode_allocation_spend()</code>.</span>"
+          : "<span><strong>Unit:</strong> Decision variable x (coverage increment; infra_lpg_grid disabled in Scenario A).</span><span><strong>Source:</strong> <code>s3_pareto_front.csv</code>.</span>";
 
         global.AppCharts.plot(
           "chart-alloc-main",
@@ -465,7 +466,7 @@
         }));
 
         titleEl.textContent = `Solution #${sol.solution_id} — Stacked Spend by Unit & Period ($M)`;
-        capEl.innerHTML = "<span><strong>Unit:</strong> USD Millions (MOCK_V1).</span><span><strong>Rule:</strong> Infra capex triggers when x ≥ 0.50.</span>";
+        capEl.innerHTML = "<span><strong>Unit:</strong> USD Millions (REAL_V1_2024USD).</span><span><strong>Scenario A:</strong> infra_lpg_grid fixed to 0.0 (unverified capex).</span>";
 
         global.AppCharts.plot("chart-alloc-main", barTraces, {
           barmode: "stack",
@@ -479,70 +480,119 @@
 
     function renderSweepTab() {
       const mount = document.getElementById("sweep-content-mount");
-      if (state.sweepTab === "budget") {
+      if (state.sweepTab === "mc_reeval") {
         mount.innerHTML = `
-          <div class="table-wrap">
+          <div class="table-wrap" style="margin-bottom:1rem;">
             <table class="data-table">
-              <thead><tr><th>Scenario</th><th class="num-right">Budget ($M)</th><th class="num-right">Pareto Pts</th><th class="num-right">Knee DALYs</th><th class="num-right">DALY-Min</th><th class="num-right">MDP b6 DALYs</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Plan / Policy</th>
+                  <th class="num-right">Cost ($M)</th>
+                  <th class="num-right">Analytical DALYs</th>
+                  <th class="num-right">500-Draw Stage 2 Mean [2.5%–97.5%]</th>
+                  <th class="num-right">500-Draw Joint Mean [2.5%–97.5%]</th>
+                  <th class="num-right">Analytical Eq Gap</th>
+                  <th class="num-right">Joint Eq Mean</th>
+                </tr>
+              </thead>
               <tbody>
-                ${budgetSweep
-            .map(
-              (r) => `
-                  <tr><td><strong>${esc(r.scenario)}</strong></td><td class="num-right">${fmtUsdM(r.budget_usd_millions, 2)}</td><td class="num-right">${r.nsga2_n_pareto}</td><td class="num-right">${fmtMillions(r.knee_dalys_2040, 2)}</td><td class="num-right">${fmtMillions(r.daly_min_dalys_2040, 2)}</td><td class="num-right">${fmtMillions(r.mdp_b6_mean_dalys_2040, 2)}</td></tr>
+                ${reevalRows
+                  .map(
+                    (r) => `
+                  <tr>
+                    <td><code>${esc(r.plan_name)}</code></td>
+                    <td class="num-right">${fmtUsdM(r.total_cost_usd_millions, 1)}</td>
+                    <td class="num-right">${fmtMillions(r.analytical_dalys_mean, 3)}</td>
+                    <td class="num-right">${fmtMillions(r.stage2_draws_dalys_mean, 3)} [${fmtMillions(r.stage2_draws_dalys_p025, 2)}–${fmtMillions(r.stage2_draws_dalys_p975, 2)}]</td>
+                    <td class="num-right"><strong>${fmtMillions(r.joint_draws_dalys_mean, 3)}</strong> [${fmtMillions(r.joint_draws_dalys_p025, 2)}–${fmtMillions(r.joint_draws_dalys_p975, 2)}]</td>
+                    <td class="num-right">${Number(r.analytical_equity_gap_asr).toFixed(2)}</td>
+                    <td class="num-right">${Number(r.joint_draws_equity_gap_mean).toFixed(2)}</td>
+                  </tr>
                 `
-            )
-            .join("")}
+                  )
+                  .join("")}
               </tbody>
             </table>
           </div>
+          <div>
+            <img src="assets/images/real/s3_pareto_uncertainty_reeval.png" alt="500-Draw Joint Monte Carlo Uncertainty Re-Evaluation" style="width:100%; max-width:920px; border-radius:8px; border:1px solid var(--border-subtle);" />
+          </div>
         `;
-      } else if (state.sweepTab === "eta") {
+      } else if (state.sweepTab === "sens_all") {
         mount.innerHTML = `
-          <div class="table-wrap">
+          <div class="table-wrap" style="margin-bottom:1rem;">
             <table class="data-table">
-              <thead><tr><th>Scenario</th><th class="num-right">Budget ($M)</th><th class="num-right">η_bio</th><th class="num-right">Knee DALYs</th><th class="num-right">Knee Bio Cov</th><th class="num-right">MDP b6 Bio Cov</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Factor</th>
+                  <th>Scenario</th>
+                  <th class="num-right">Budget ($M)</th>
+                  <th class="num-right">Bridge</th>
+                  <th class="num-right">η_bio</th>
+                  <th class="num-right">Knee Averted</th>
+                  <th class="num-right">Knee Cost ($M)</th>
+                  <th class="num-right">DALY-Min Averted</th>
+                  <th class="num-right">DALY-Min Cost ($M)</th>
+                  <th class="num-right">MDP Averted</th>
+                </tr>
+              </thead>
               <tbody>
-                ${etaSweep
-            .map(
-              (r) => `
-                  <tr><td><code>${esc(r.scenario)}</code></td><td class="num-right">${fmtUsdM(r.budget_usd_millions, 1)}</td><td class="num-right">${Number(r.eta_biomass).toFixed(2)}</td><td class="num-right">${fmtMillions(r.knee_dalys_2040, 2)}</td><td class="num-right">${(Number(r.knee_bio_cov) * 100).toFixed(1)}%</td><td class="num-right">${(Number(r.mdp_b6_nom_bio_cov) * 100).toFixed(1)}%</td></tr>
+                ${sensReal
+                  .map(
+                    (r) => `
+                  <tr>
+                    <td><code>${esc(r.factor_group)}</code></td>
+                    <td><strong>${esc(r.scenario_label)}</strong></td>
+                    <td class="num-right">${fmtUsdM(r.budget_usd_millions, 1)}</td>
+                    <td class="num-right">${Number(r.bridge_factor).toFixed(1)}</td>
+                    <td class="num-right">${Number(r.eta_biomass).toFixed(2)}</td>
+                    <td class="num-right">${fmtNum(r.ga_knee_dalys_averted, 0)}</td>
+                    <td class="num-right">${fmtUsdM(r.ga_knee_cost_usd_m, 1)}</td>
+                    <td class="num-right"><strong>${fmtNum(r.ga_daly_min_dalys_averted, 0)}</strong></td>
+                    <td class="num-right">${fmtUsdM(r.ga_daly_min_cost_usd_m, 1)}</td>
+                    <td class="num-right">${fmtNum(r.mdp_mean_dalys_averted, 0)}</td>
+                  </tr>
                 `
-            )
-            .join("")}
+                  )
+                  .join("")}
               </tbody>
             </table>
           </div>
-        `;
-      } else if (state.sweepTab === "cap") {
-        mount.innerHTML = `
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr><th>Scenario</th><th class="num-right">Budget ($M)</th><th class="num-right">Induction Cap</th><th class="num-right">Pareto HV</th><th class="num-right">Knee DALYs</th><th class="num-right">DALY-Min</th></tr></thead>
-              <tbody>
-                ${capSweep
-            .map(
-              (r) => `
-                  <tr><td><strong>${esc(r.scenario)}</strong></td><td class="num-right">${fmtUsdM(r.budget_usd_millions, 2)}</td><td class="num-right">${(Number(r.cap_electric_induction) * 100).toFixed(1)}%</td><td class="num-right">${(Number(r.nsga2_combined_hv) / 1e9).toFixed(2)}B</td><td class="num-right">${fmtMillions(r.knee_dalys_2040, 2)}</td><td class="num-right">${fmtMillions(r.daly_min_dalys_2040, 2)}</td></tr>
-                `
-            )
-            .join("")}
-              </tbody>
-            </table>
+          <div>
+            <img src="assets/images/real/plan_sensitivity_tornado.png" alt="8-Factor Sensitivity Tornado Chart" style="width:100%; max-width:920px; border-radius:8px; border:1px solid var(--border-subtle);" />
           </div>
         `;
       } else {
         mount.innerHTML = `
           <div class="table-wrap">
             <table class="data-table">
-              <thead><tr><th>Baseline Mode</th><th class="num-right">Bridge</th><th>Method</th><th class="num-right">2040 DALYs</th><th class="num-right">Cost ($M)</th><th class="num-right">ASR Gap</th><th class="num-right">Pop Overshoot</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Selected Plan</th>
+                  <th class="num-right">2040 DALYs</th>
+                  <th class="num-right">Alt A One-Time ($M)</th>
+                  <th class="num-right">Alt B Recurring LPG ($M)</th>
+                  <th class="num-right">Extra LPG Opex ($M)</th>
+                  <th class="num-right">Alt B / Alt A Ratio</th>
+                  <th>Fits $5,985.7M Cap?</th>
+                </tr>
+              </thead>
               <tbody>
-                ${bridgeSens
-            .map(
-              (r) => `
-                  <tr><td><code>${esc(r.baseline_mode)}</code></td><td class="num-right">${Number(r.bridge_factor).toFixed(1)}</td><td><strong>${esc(r.method)}</strong></td><td class="num-right">${fmtMillions(r.dalys_2040_mean, 2)}</td><td class="num-right">${fmtUsdM(r.total_cost_usd_millions, 1)}</td><td class="num-right">${Number(r.equity_gap_asr).toFixed(2)}</td><td class="num-right">${Number(r.pop_100pct_overshoot).toFixed(4)}</td></tr>
+                ${opexSens
+                  .map(
+                    (r) => `
+                  <tr>
+                    <td><code>${esc(r.plan_name)}</code></td>
+                    <td class="num-right">${fmtMillions(r.dalys_2040_mean, 3)}</td>
+                    <td class="num-right">${fmtUsdM(r.alt_a_one_time_cost_usd_m, 1)}</td>
+                    <td class="num-right"><strong>${fmtUsdM(r.alt_b_recurring_lpg_cost_usd_m, 1)}</strong></td>
+                    <td class="num-right">+${fmtUsdM(r.alt_b_extra_lpg_opex_usd_m, 1)}</td>
+                    <td class="num-right">${Number(r.alt_b_cost_ratio_vs_alt_a).toFixed(2)}×</td>
+                    <td><span class="badge ${r.fits_base_budget_under_alt_b ? "badge-real" : "badge-mock"}">${r.fits_base_budget_under_alt_b ? "Yes" : "No"}</span></td>
+                  </tr>
                 `
-            )
-            .join("")}
+                  )
+                  .join("")}
               </tbody>
             </table>
           </div>
@@ -556,7 +606,7 @@
         global.AppCharts.plot(
           "chart-hv-conv",
           hvConv.map((s, idx) => ({
-            x: s.history.map((h) => h.generation),
+            x: s.history.map((h) => h.generation ?? h.gen),
             y: s.history.map((h) => h.hypervolume / 1e9),
             name: `Seed ${s.seed}`,
             mode: "lines",

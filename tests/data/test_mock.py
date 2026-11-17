@@ -10,7 +10,7 @@ from src.data.contracts import load_config, load_stage3_contracts
 from src.data.mock import generate_mock_fixtures
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CONFIG_PATH = REPO_ROOT / "configs" / "default.yaml"
+CONFIG_PATH = REPO_ROOT / "configs" / "mock.yaml"
 
 
 def test_mock_generator_is_byte_deterministic(tmp_path: Path) -> None:

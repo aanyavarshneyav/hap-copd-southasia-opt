@@ -80,11 +80,8 @@ def ingest_wpp_population(raw_dir: Path, interim_dir: Path) -> pd.DataFrame:
     if cache_path.exists():
         return pd.read_parquet(cache_path)
 
-    wpp_file = (
-        raw_dir
-        / "WPP2024_PopulationBySingleAgeSex_Medium_1950-2023.csv"
-        / "WPP2024_PopulationBySingleAgeSex_Medium_1950-2023.csv"
-    )
+    wpp_base = raw_dir / "WPP2024_PopulationBySingleAgeSex_Medium_1950-2023.csv"
+    wpp_file = wpp_base / wpp_base.name if wpp_base.is_dir() else wpp_base
     if not wpp_file.exists():
         raise FileNotFoundError(f"WPP population file not found: {wpp_file}")
 

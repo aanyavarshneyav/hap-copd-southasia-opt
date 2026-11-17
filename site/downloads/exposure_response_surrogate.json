@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "is_mock": false,
+  "data_version": "GBD_2023_WPP_2024",
+  "functional_form": "log_linear",
+  "generated_at": "2026-11-17T02:19:40.755828+00:00",
+  "source_model": "log_ols_smooth",
+  "calibration_note": "Pooled smooth Log-OLS (log_val ~ t + clean_fuel_share + C(location), N=136, R2=0.8938, slope=-2.1933 +/- 0.2557 SE, p=2.51e-14); replaces HistGradientBoosting artifacts.",
+  "units": {
+    "IND_urban": {
+      "slope_clean_fuel": -2.1933,
+      "baseline_clean_fuel": 0.985,
+      "sex_elasticity_ratio_f_to_m": 1.05,
+      "uncertainty_sd": 0.2557
+    },
+    "IND_rural": {
+      "slope_clean_fuel": -2.1933,
+      "baseline_clean_fuel": 0.85,
+      "sex_elasticity_ratio_f_to_m": 1.05,
+      "uncertainty_sd": 0.2557
+    },
+    "NPL_urban": {
+      "slope_clean_fuel": -2.1933,
+      "baseline_clean_fuel": 0.82,
+      "sex_elasticity_ratio_f_to_m": 1.05,
+      "uncertainty_sd": 0.2557
+    },
+    "NPL_rural": {
+      "slope_clean_fuel": -2.1933,
+      "baseline_clean_fuel": 0.48,
+      "sex_elasticity_ratio_f_to_m": 1.05,
+      "uncertainty_sd": 0.2557
+    }
+  }
+}

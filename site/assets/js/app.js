@@ -101,8 +101,14 @@
 
   function statusBadge(status) {
     const s = String(status || "").toLowerCase();
+    if (s.includes("unresolved_scenario_a")) {
+      return `<span class="badge badge-mock">Null (Disabled Scen. A)</span>`;
+    }
     if (s.includes("unresolved") || s.includes("null")) {
       return `<span class="badge badge-mock">Unresolved Gap</span>`;
+    }
+    if (s.includes("active_in_real")) {
+      return `<span class="badge badge-real">Active (REAL_V1)</span>`;
     }
     if (s.includes("mock")) {
       return `<span class="badge badge-mock">Synthetic Mock</span>`;
@@ -110,8 +116,8 @@
     if (s.includes("sourced_partial") || s.includes("partial")) {
       return `<span class="badge badge-assumption">Partial / Assumption</span>`;
     }
-    if (s === "sourced" || (s.includes("acquired") && !s.includes("proxy")) || s === "observed" || s === "real") {
-      return `<span class="badge badge-real">Sourced / Real</span>`;
+    if (s === "sourced" || (s.includes("acquired") && !s.includes("proxy")) || s === "observed" || s === "real" || s === "verified" || s === "complete") {
+      return `<span class="badge badge-real">${s === "verified" ? "Verified" : s === "complete" ? "Complete" : "Sourced / Real"}</span>`;
     }
     if (s.includes("derived")) {
       return `<span class="badge badge-derived">Derived</span>`;
@@ -230,6 +236,18 @@
     }
   }
 
+  function infoBanner(title = "VALIDATED REAL-DATA RUN", detail = "") {
+    return `
+      <div class="banner banner-info" role="status">
+        <span class="banner-icon">●</span>
+        <div class="banner-body">
+          <strong>${esc(title)}</strong>
+          ${detail ? `<p>${esc(detail)}</p>` : ""}
+        </div>
+      </div>
+    `;
+  }
+
   async function init() {
     try {
       const meta = await loadJSON("metadata.json");
@@ -237,7 +255,7 @@
       if (statusText && meta) {
         statusText.textContent = meta.use_mock_forecasts
           ? "Mock Decision Demo (MOCK_V1) · Real Clean-Cooking Inputs"
-          : "Validated Pipeline";
+          : `Real Decision Pipeline (${meta.data_version || "GBD 2023"} + ${meta.parameter_version || "REAL_V1_2024USD"}) · Scenario A`;
       }
     } catch (_) {
       /* keep fallback topbar text */
@@ -272,6 +290,7 @@
     fmtPct,
     statusBadge,
     mockBanner,
+    infoBanner,
     navigateTo,
   };
 

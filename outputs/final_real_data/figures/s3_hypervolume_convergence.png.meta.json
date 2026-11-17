@@ -1,0 +1,28 @@
+{
+  "artifact": "s3_hypervolume_convergence.png",
+  "source": "src.optimise.run",
+  "generated_at": "2026-11-17T02:19:43Z",
+  "data_version": "GBD_2023_WPP_2024",
+  "is_mock": false,
+  "warning_mock_inputs": false,
+  "note": "Stage 3 scenario analysis output (costs and effects are scenario assumptions).",
+  "algorithm": "NSGA2",
+  "population_size": 80,
+  "n_generations": 100,
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "use_repair": true,
+  "repair_budget": true,
+  "total_budget_usd_millions": 5985.73,
+  "hypervolume_ref_point": [
+    2834829.1229999997,
+    6285.0165,
+    34.55085803596621
+  ],
+  "pipeline_runtime_seconds": 1.4781
+}

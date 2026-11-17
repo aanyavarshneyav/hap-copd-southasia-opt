@@ -26,7 +26,7 @@ from src.planning.mdp import (
 from src.planning.pddl_runner import plan_to_decision_vector, solve_pddl
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CONFIG_PATH = REPO_ROOT / "configs" / "default.yaml"
+CONFIG_PATH = REPO_ROOT / "configs" / "mock.yaml"
 
 
 def _tiny_compare_config(tmp_path: Path) -> Path:

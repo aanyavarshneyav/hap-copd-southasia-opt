@@ -270,7 +270,7 @@ def _is_action_valid_and_cost(
         if act == ACT_NONE:
             continue
         if act == ACT_INFRA:
-            if lpg_ready[u] == 1 and grid_ready[u] == 1:
+            if (not evaluator._infra_enabled[u]) or (lpg_ready[u] == 1 and grid_ready[u] == 1):
                 return False, 0.0
             cost += float(evaluator._infra_costs[u]) * disc
             continue

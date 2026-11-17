@@ -143,14 +143,22 @@ def repair_decision_vectors(
     infra_idx = evaluator._idx_infra
     disc = evaluator._period_discount
 
-    # 2. Per-period adoption caps on cooking interventions
+    # 2. Per-period adoption caps on cooking & infrastructure interventions
     tensor[:, :, cook_idx, :] = np.minimum(
         tensor[:, :, cook_idx, :],
         evaluator._non_infra_max_adoption[np.newaxis, :, :, :],
     )
+    tensor[:, :, infra_idx, :] = np.minimum(
+        tensor[:, :, infra_idx, :],
+        evaluator._infra_max_adoption[np.newaxis, :, :],
+    )
+    tensor[:, ~evaluator._infra_enabled, infra_idx, :] = 0.0
 
     # 3. Ensure infrastructure builds themselves fit within total budget
-    infra_built = (tensor[:, :, infra_idx, :] >= evaluator.infra_build_threshold).astype(float)
+    infra_built = (
+        (tensor[:, :, infra_idx, :] >= evaluator.infra_build_threshold)
+        & evaluator._infra_enabled[np.newaxis, :, np.newaxis]
+    ).astype(float)
     infra_cost = np.sum(
         infra_built
         * evaluator._infra_costs[np.newaxis, :, np.newaxis]

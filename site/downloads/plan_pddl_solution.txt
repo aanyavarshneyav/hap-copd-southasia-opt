@@ -1,0 +1,13 @@
+# PDDL Plan Solution (SCENARIO DATA)
+# Generated: 2026-11-17T02:19:47Z | data_version=GBD_2023_WPP_2024 | is_mock=False
+# Planner: pyperplan (astar + hff) | solve_time=0.0817s
+# Replay Verification: PASSED (35 final facts)
+# Stage3Evaluator Check: is_feasible=True, dalys_2040_mean=2,275,580.16 [1,702,388.61, 2,848,771.72], cost=$3262.52M, equity_gap_asr=25.41
+
+01: (rollout-lpg-init-ready npl_urban p1 c0 c1 b8 b7)
+02: (rollout-lpg-init-ready ind_urban p1 c0 c1 b7 b6)
+03: (rollout-lpg-init-ready ind_rural p1 c0 c1 b6 b5)
+04: (rollout-improved-biomass npl_rural p1 c0 c1 b5 b4)
+05: (advance-period p1 p2)
+06: (rollout-lpg-init-ready ind_rural p2 c1 c2 b4 b3)
+07: (rollout-improved-biomass npl_rural p2 c1 c2 b3 b2)

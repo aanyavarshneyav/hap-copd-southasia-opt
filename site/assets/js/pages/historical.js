@@ -8,9 +8,13 @@
     const cfRecords = data.clean_fuel_records || [];
     const demoRecords = data.demographic_records || [];
     const gbd = data.gbd_burden_status || {};
+    const gbdSummary = data.gbd_summary || [];
+    const eapcRows = data.eapc_joinpoint || [];
+    const pwlfRows = data.pwlf_breakpoints || [];
+    const shareRows = data.attributable_share || [];
 
     const state = {
-      activeView: "cf_access", // "cf_access" | "fuel_mix" | "gbd_pending"
+      activeView: "cf_access", // "cf_access" | "fuel_mix" | "gbd_burden"
       cfCountry: "BOTH",
       cfResidence: "urban_rural",
       showDhsOverlay: true,
@@ -74,19 +78,19 @@
           <span class="page-eyebrow">02 · Stage 1 Historical Epidemiology &amp; Exposure Drivers</span>
           <div class="page-header-meta" style="margin-top:0;">
             <span class="badge badge-real">Clean Cooking (1990–2024): Real Data</span>
-            <span class="badge badge-pending">GBD 2023 COPD Burden: Pending make stage1</span>
+            <span class="badge badge-real">GBD 2023 COPD Burden (1990–2023): Complete</span>
           </div>
         </div>
         <h1 class="page-title">Historical Burden &amp; Clean-Cooking Transitions</h1>
         <p class="page-lead">
-          Tracks real clean-cooking fuel transitions across India and Nepal (1990–2024) alongside the Stage 1 framework for South Asian COPD ${term("DALYs")} and deaths.
+          Tracks real clean-cooking fuel transitions across India and Nepal (1990–2024) alongside complete Stage 1 GBD 2023 estimates of South Asian COPD ${term("DALYs")} and deaths.
         </p>
       </header>
 
       <div class="takeaway-bar">
         <span class="takeaway-tag">Key Takeaway</span>
         <div>
-          Verified WHO/World Bank data show India's rural clean-cooking access expanded from ~22% in 2010 to <strong>69.0%</strong> (95% UI: 53–82%) in 2024, while rural Nepal sits at <strong>25.0%</strong> (14–40%) and urban Nepal retains 39.3% firewood reliance. National GBD 2023 COPD burden series await raw GHDx export (<code>A-03</code>).
+          Across 1990–2023, HAP-COPD age-standardized DALY rates fell sharply across all five nations (Bhutan −94.2%, India −56.4% to 593.9/100k, Pakistan −44.0%, Nepal −40.0% to 1,033.9/100k, Bangladesh −32.2%), yet population ageing raised absolute DALYs in India (+24.8% to 6.96M) and Nepal (+75.7% to 254.0k).
         </div>
       </div>
 
@@ -99,8 +103,8 @@
           <button type="button" class="tab-btn" role="tab" data-hist-view="fuel_mix">
             Primary Fuel Mix (1990–2023 · Real)
           </button>
-          <button type="button" class="tab-btn" role="tab" data-hist-view="gbd_pending">
-            GBD 2023 COPD Burden (1990–2023 · Pending)
+          <button type="button" class="tab-btn" role="tab" data-hist-view="gbd_burden">
+            GBD 2023 COPD Burden &amp; EAPC (1990–2023 · Real)
           </button>
         </div>
 
@@ -280,56 +284,132 @@
         `;
 
         stageEl.innerHTML = `
-          <div class="pending-panel" style="border:none; background:transparent; padding:0.5rem 0;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
-              <h3>GBD 2023 South Asia HAP-COPD Burden (1990–2023) — Pending Stage 1 Export</h3>
-              <span class="badge badge-pending">Awaiting data/raw/gbd2023_*.csv</span>
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">GBD 2023 South Asia HAP-COPD Burden &amp; Structural Breakpoints (1990–2023)</h2>
+              <p class="card-subtitle">All-age burden and age-standardized rates (ASRs per 100k), full-period EAPC, and PWLF breakpoints</p>
             </div>
-            <p id="gbd-pending-desc"></p>
-            <div class="grid grid-3" style="margin-top:0.5rem;">
-              <div class="card-elevated">
-                <strong style="font-size:0.88rem;">Country Comparison</strong>
-                <p style="margin:0.3rem 0 0; font-size:0.82rem; color:var(--text-secondary);">5-country South Asian panel (India &amp; Nepal highlighted vs. Pakistan, Bangladesh, Bhutan) across 1990 vs. 2023.</p>
-              </div>
-              <div class="card-elevated">
-                <strong style="font-size:0.88rem;">EAPC &amp; Joinpoint Trends</strong>
-                <p style="margin:0.3rem 0 0; font-size:0.82rem; color:var(--text-secondary);">1990–2023 annual trajectories with 95% UI ribbons, OLS EAPC, and <code>pwlf</code> inflection breakpoints.</p>
-              </div>
-              <div class="card-elevated">
-                <strong style="font-size:0.88rem;">Country × Period Matrix</strong>
-                <p style="margin:0.3rem 0 0; font-size:0.82rem; color:var(--text-secondary);">All-age counts and ASRs by country, year, and sex (no 5-year age-group trajectories per final methodology).</p>
-              </div>
-            </div>
-            <div class="pending-checklist" style="margin-top:0.5rem;">
-              ${(gbd.expected_files || []).map((f) => `<span class="pending-chip">${esc(f)}</span>`).join("")}
-            </div>
+            <span class="badge badge-real">Real GBD 2023 + UN WPP 2024</span>
+          </div>
+          <div id="chart-hist-gbd" class="chart-box-tall"></div>
+          <div class="chart-caption">
+            <span id="gbd-real-cap"></span>
+            <span><strong>Source:</strong> <code>s1_attributable_share.csv</code>, <code>s1_historical_summary.csv</code>, <code>s1_eapc_joinpoint.csv</code>, <code>s1_pwlf_breakpoints.csv</code>.</span>
+          </div>
+          <div style="margin-top:1.25rem;" class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Location</th>
+                  <th>Measure</th>
+                  <th class="num-right">1990 Count</th>
+                  <th class="num-right">2023 Count</th>
+                  <th class="num-right">Count Δ%</th>
+                  <th class="num-right">1990 ASR</th>
+                  <th class="num-right">2023 ASR</th>
+                  <th class="num-right">ASR Δ%</th>
+                  <th class="num-right">EAPC (%/yr)</th>
+                  <th>PWLF Breakpoint</th>
+                </tr>
+              </thead>
+              <tbody id="gbd-summary-tbody"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:1.25rem;">
+            <img src="assets/images/real/s1_country_period_heatmap.png" alt="Country by Period HAP-COPD DALY ASR Heatmap" style="width:100%; max-width:960px; border-radius:8px; border:1px solid var(--border-subtle);" />
           </div>
         `;
 
-        const updateGbdText = () => {
-          const mLabels = {
-            DALYs_ASR: "Age-Standardized DALY Rate (per 100,000 population)",
-            DALYs_Count: "All-Age Total DALYs (Number)",
-            Deaths_ASR: "Age-Standardized Death Rate (per 100,000 population)",
-            Deaths_Count: "All-Age Total Deaths (Number)",
-            HAP_Share: "HAP-Attributable Share of Total COPD (%)",
+        const updateGbdView = () => {
+          const wantMeasure = state.gbdMetric.startsWith("Deaths") ? "Deaths" : "DALYs";
+          const isShare = state.gbdMetric === "HAP_Share";
+          const locs = state.gbdCountry === "ALL"
+            ? ["India", "Nepal", "Pakistan", "Bangladesh", "Bhutan", "IND_urban", "IND_rural", "NPL_urban", "NPL_rural"]
+            : [state.gbdCountry];
+          const colorMap = {
+            India: "#83CDD1",
+            Nepal: "#DF8B6C",
+            Pakistan: "#D6C7A9",
+            Bangladesh: "#8A9A86",
+            Bhutan: "#A6AAA6",
+            IND_urban: "#68BBC2",
+            IND_rural: "#54989E",
+            NPL_urban: "#E5A58A",
+            NPL_rural: "#C87152",
           };
-          const cText = state.gbdCountry === "ALL" ? "India, Nepal, Pakistan, Bangladesh, and Bhutan" : state.gbdCountry;
-          const el = document.getElementById("gbd-pending-desc");
+          const traces = [];
+          for (const loc of locs) {
+            const rows = shareRows
+              .filter((r) => r.location === loc && r.measure === wantMeasure)
+              .sort((a, b) => a.year - b.year);
+            if (!rows.length) continue;
+            traces.push({
+              x: rows.map((r) => r.year),
+              y: rows.map((r) => (isShare ? r.hap_copd_share_of_total_copd_pct : r.hap_copd_asr)),
+              name: loc,
+              mode: "lines",
+              line: { color: colorMap[loc] || "#83CDD1", width: loc.includes("_") ? 2 : 2.5, dash: loc.includes("_") ? "dot" : "solid" },
+              hovertemplate: `<b>${loc}</b><br>Year: %{x}<br>${isShare ? "HAP Share: %{y:.1f}%" : "ASR: %{y:,.1f}/100k"}<extra></extra>`,
+            });
+          }
+          const yTitle = isShare
+            ? "HAP-COPD Share of Total COPD (%)"
+            : `${wantMeasure} Age-Standardized Rate (per 100k)`;
+          global.AppCharts.plot("chart-hist-gbd", traces, {
+            xaxis: { title: "Year (1990–2023)" },
+            yaxis: { title: yTitle },
+            legend: { orientation: "h", y: -0.22 },
+            margin: { l: 70, r: 20, t: 18, b: 92 },
+          });
+
+          const tbody = document.getElementById("gbd-summary-tbody");
+          const sumFiltered = gbdSummary.filter(
+            (r) =>
+              r.sex === "both" &&
+              (state.gbdCountry === "ALL" || r.location === state.gbdCountry) &&
+              r.measure === wantMeasure
+          );
+          tbody.innerHTML = sumFiltered
+            .map((r) => {
+              const eRow = eapcRows.find(
+                (e) => e.location === r.location && e.measure === r.measure && e.sex === "both" && e.period === "1990-2023"
+              );
+              const pRow = pwlfRows.find((p) => p.location === r.location && p.measure === r.measure);
+              const bpText = pRow
+                ? `${String(pRow.breakpoint_years || "").replace(/[\[\]np\.float64\(\)]/g, "")} (${Number(pRow.apc_segment_1).toFixed(2)}% → ${Number(pRow.apc_segment_2).toFixed(2)}%/yr)`
+                : "—";
+              return `
+                <tr>
+                  <td><strong>${esc(r.location)}</strong></td>
+                  <td>${esc(r.measure)}</td>
+                  <td class="num-right">${fmtNum(r.count_1990, 0)}</td>
+                  <td class="num-right">${fmtNum(r.count_2023, 0)}</td>
+                  <td class="num-right">${Number(r.count_pct_change) >= 0 ? "+" : ""}${Number(r.count_pct_change).toFixed(1)}%</td>
+                  <td class="num-right">${fmtNum(r.asr_1990, 1)}</td>
+                  <td class="num-right">${fmtNum(r.asr_2023, 1)}</td>
+                  <td class="num-right">${Number(r.asr_pct_change).toFixed(1)}%</td>
+                  <td class="num-right">${eRow ? `${Number(eRow.eapc).toFixed(2)}%` : "—"}</td>
+                  <td style="font-size:0.78rem;">${esc(bpText)}</td>
+                </tr>
+              `;
+            })
+            .join("");
+
+          const el = document.getElementById("gbd-real-cap");
           if (el) {
-            el.textContent = `Selected Stage 1 view: ${mLabels[state.gbdMetric]} across ${cText} (1990–2023). Raw IHME GBD 2023 CSVs require interactive GHDx export (Task A-03) before make stage1 can populate these charts—no synthetic GBD figures are shown.`;
+            el.textContent = `Showing ${yTitle} across ${state.gbdCountry === "ALL" ? "all 5 countries and 4 IND/NPL units" : state.gbdCountry}.`;
           }
         };
 
         ctrlEl.querySelector("#gbd-country-sel").addEventListener("change", (e) => {
           state.gbdCountry = e.target.value;
-          updateGbdText();
+          updateGbdView();
         });
         ctrlEl.querySelector("#gbd-metric-sel").addEventListener("change", (e) => {
           state.gbdMetric = e.target.value;
-          updateGbdText();
+          updateGbdView();
         });
-        updateGbdText();
+        updateGbdView();
       }
     }
 

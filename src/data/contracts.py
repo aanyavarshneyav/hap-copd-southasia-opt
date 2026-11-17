@@ -733,7 +733,30 @@ def validate_intervention_params_json(
                     f"{expected_interventions}."
                 )
             for interv in expected_interventions:
-                val = _check_finite_number(u_map[interv], f"{map_name}.{u}.{interv}", file_label)
+                raw_val = u_map[interv]
+                if (
+                    map_name == "unit_costs_usd_millions"
+                    and interv == "infra_lpg_grid"
+                    and raw_val is None
+                ):
+                    infra_caps = data.get("max_adoption_per_period", {}).get(u, {}).get(interv, {})
+                    if not isinstance(infra_caps, dict) or any(
+                        _check_finite_number(
+                            infra_caps.get(p),
+                            f"max_adoption_per_period.{u}.{interv}.{p}",
+                            file_label,
+                        )
+                        != 0.0
+                        for p in expected_periods
+                    ):
+                        raise ContractValidationError(
+                            f"[{file_label}] 'unit_costs_usd_millions.{u}.infra_lpg_grid' is null "
+                            f"while 'max_adoption_per_period.{u}.infra_lpg_grid' is non-zero; "
+                            "null infrastructure cost cannot be treated as zero and requires "
+                            "disabling infra_lpg_grid (0.0 caps across all periods)."
+                        )
+                    continue
+                val = _check_finite_number(raw_val, f"{map_name}.{u}.{interv}", file_label)
                 if map_name == "unit_costs_usd_millions" and val < 0.0:
                     raise ContractValidationError(
                         f"[{file_label}] '{map_name}.{u}.{interv}' must be >= 0, got {val}."

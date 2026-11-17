@@ -122,7 +122,11 @@ def _decompose_unit_period(
     bio_cap = float(evaluator._max_adoption[u_idx, bio_i_idx, p_idx])
 
     # Method M2: Rural / unready unit in P1/P2 -> build infra for strictly later periods
-    if not is_clean_ready_now and p_idx < evaluator.n_periods - 1:
+    if (
+        evaluator._infra_enabled[u_idx]
+        and not is_clean_ready_now
+        and p_idx < evaluator.n_periods - 1
+    ):
         # Check if budget covers infra + at least modest clean rollout later
         min_clean_reserve = 0.05 * clean_unit_cost
         if state.remaining_budget >= infra_cost + min_clean_reserve + _FLOAT_EPS:

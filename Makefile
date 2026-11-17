@@ -1,4 +1,4 @@
-.PHONY: help setup lint format test check mock-data validate-data stage1 stage2 stage3 mdp planning compare all clean
+.PHONY: help setup lint format test test-raw test-all check mock-data validate-data stage1 stage2 stage3 mdp planning compare all clean
 
 PYTHON := python3.12
 VENV := .venv
@@ -10,7 +10,9 @@ help:
 	@echo "  make setup          Create Python 3.12 venv and install project + dev deps"
 	@echo "  make lint           Run ruff linter and format check"
 	@echo "  make format         Auto-format src/ and tests/ with ruff"
-	@echo "  make test           Run pytest suite"
+	@echo "  make test           Run core/contract pytest suite (excludes external raw-archive test)"
+	@echo "  make test-raw       Run Stage 1 raw-archive integration test (requires data/raw/*)"
+	@echo "  make test-all       Run entire pytest suite including raw-archive tests"
 	@echo "  make check          Run lint + test"
 	@echo "  make mock-data      [Phase 1+] Generate deterministic synthetic *_mock.* fixtures"
 	@echo "  make validate-data  [Phase 1+] Validate raw datasets against DATA_SPEC.md"
@@ -36,6 +38,12 @@ format:
 	$(BIN)/ruff format src tests
 
 test:
+	$(BIN)/pytest -k "not test_stage1_pipeline_run"
+
+test-raw:
+	$(BIN)/pytest tests/historical/test_historical.py -k test_stage1_pipeline_run
+
+test-all:
 	$(BIN)/pytest
 
 check: lint test

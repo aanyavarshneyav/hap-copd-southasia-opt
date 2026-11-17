@@ -1,38 +1,40 @@
 {
   "project_name": "hap-copd-southasia-opt",
   "version": "0.1.0",
-  "generated_at": "2026-11-16T20:36:44Z",
-  "use_mock_forecasts": true,
+  "generated_at": "2026-11-17T02:34:54Z",
+  "use_mock_forecasts": false,
+  "data_version": "GBD_2023_WPP_2024",
+  "parameter_version": "REAL_V1_2024USD",
   "pipeline_status": {
     "stage0_ingestion": {
-      "status": "partial_inputs_acquired",
-      "label": "Auxiliary Inputs Acquired / GBD Pending",
-      "detail": "UN WPP 2024, UN WUP 2025, WHO GHO SDG 7.1.2, World Bank WDI, DHS/NFHS, and Nepal NPHC 2021 acquired in b/param-sourcing; IHME GBD 2023 raw exports pending (A-03)."
+      "status": "complete",
+      "label": "Stage 0: Data Ingestion & Harmonisation",
+      "detail": "GBD 2023 (1990\u20132023), UN WPP 2024, WHO SDG 7.1.2, NFHS-5, NDHS 2022, India/Nepal Censuses validated."
     },
     "stage1_historical": {
-      "status": "pending_gbd",
-      "label": "Pending GBD 2023 Data",
-      "detail": "src/historical/ awaiting GBD 2023 HAP-COPD, Total COPD, and All-Cause HAP CSV exports; real clean-cooking access series (1990\u20132024) are available and displayed."
+      "status": "complete",
+      "label": "Stage 1: Historical Burden (1990\u20132023)",
+      "detail": "5-country ASRs, EAPC, PWLF breakpoints, HAP-COPD shares & apportioned IND/NPL units complete."
     },
     "stage2_forecast": {
-      "status": "pending_stage2",
-      "label": "Pending Stage 2 Exports",
-      "detail": "src/forecast/ awaiting validated Stage 2 rolling-origin CV and 2040 projections; Contract 1/2/3 synthetic mock explorer (MOCK_V1) is active."
+      "status": "complete",
+      "label": "Stage 2: 2040 Forecasting & Smooth Log-OLS Surrogate",
+      "detail": "Rolling-origin CV (fixed ETS, ARIMA, Drift, Theta), reconciled 2.70M BAU, smooth Log-OLS surrogate (-2.1933) & 500 draws."
     },
     "stage3_optimise": {
-      "status": "complete_mock",
-      "label": "Complete on Mock Data (MOCK_V1)",
-      "detail": "NSGA-II (pymoo), Stage3Repair, baselines, and budget/parameter sweeps verified and running on MOCK_V1."
+      "status": "complete",
+      "label": "Stage 3: NSGA-II Optimisation (Scenario A)",
+      "detail": "251 real Pareto solutions ($5,985.73M cap, Log-OLS surrogate), 500-draw joint MC & 8-factor sensitivity."
     },
     "stage4_planning": {
-      "status": "complete_mock",
-      "label": "Complete on Mock Data (MOCK_V1)",
-      "detail": "Custom NumPy MDP, HTN tree, STRIPS/PDDL (pyperplan), and 1,000-rollout GA vs MDP vs PDDL comparison verified on MOCK_V1."
+      "status": "complete",
+      "label": "Stage 4: AI Planning (MDP, HTN, PDDL)",
+      "detail": "MDP \u03bb=116.0 (22,136 states, 0.0% viol.), HTN (9 leaves), PDDL (7 steps, 0.0798s) & 1,000 CRN rollouts."
     },
     "param_sourcing": {
-      "status": "partial_real",
-      "label": "Sourced & Derived (2 Gaps Unresolved)",
-      "detail": "Costs/effectiveness sourced & derived on b/param-sourcing; infra_lpg_grid fixed capex and pooled total_budget_usd_millions remain unresolved (null)."
+      "status": "complete",
+      "label": "Contract 4 Parameters (REAL_V1_2024USD)",
+      "detail": "Active real unit costs ($22.50\u2013$106.00/HH) & separate HH/pop baselines; infra_lpg_grid null (disabled Scen. A)."
     }
   }
 }

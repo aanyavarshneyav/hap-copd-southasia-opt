@@ -8,31 +8,31 @@
   "interventions": [
     {
       "id": "lpg_subsidy",
-      "name": "LPG Subsidy",
-      "role": "Primary clean-cooking scale-up",
-      "infra_required": "Requires LPG infrastructure readiness (lpg_infra_ready_init = true or infra_lpg_grid built in strictly earlier period q < p)",
-      "description": "Upfront connection assistance + 5-year transitional cylinder refill subsidy (PMUY in India; NOC refill subsidy + assumed deposit in Nepal). Treated as a one-time 5-year transitional cohort package (Alternative A)."
+      "name": "Targeted LPG Subsidy",
+      "role": "Immediate high-effectiveness fuel switch (\u03b7 = 0.78)",
+      "infra_required": true,
+      "description": "PAHAL / Ujjwala-style targeted LPG cylinder & refill support ($84.33\u2013$90.30/HH India; $99.00\u2013$106.00/HH Nepal). Alt A models 1-time programme capex; Alt B sensitivity tests recurring refill opex."
     },
     {
       "id": "improved_biomass",
-      "name": "Improved Biomass Cookstoves",
-      "role": "Transitional / interim bridge without infra prerequisite",
-      "infra_required": "None \u2014 deployable in P1 even when rural LPG/grid prerequisites are unready",
-      "description": "Forced-draft or improved biomass stoves with 5-year hardware replacement + 5%/yr O&M. Under GBD concave COPD exposure\u2013response, field PM2.5 reductions (32\u201350%) translate to ~0.15\u20130.30 COPD PAF reduction (proposed central 0.25 vs 0.45 mock)."
+      "name": "Improved Biomass Cookstove",
+      "role": "Interim transitional harm reduction (\u03b7 = 0.25)",
+      "infra_required": false,
+      "description": "Forced-draft / Tier 2\u20133 biomass stove at 50% public co-finance ($22.50/HH co-financed; $45.00/HH full cost). Only direct adoption option for unready NPL_rural in Scenario A."
     },
     {
       "id": "electric_induction",
       "name": "Electric Induction Cooking",
-      "role": "Clean electric transition",
-      "infra_required": "Requires grid readiness (grid_ready_init = true or infra_lpg_grid built in strictly earlier period q < p)",
-      "description": "Zero point-of-use PM2.5 induction cooktop + 15A internal household wiring package (EESL NECP retail benchmark in India; AEPC/NEA in Nepal). Excludes 5-year household electricity tariffs and lacks a central Indian cash subsidy."
+      "role": "Zero-PM2.5 household cooking transition (\u03b7 = 0.85)",
+      "infra_required": true,
+      "description": "1800W single-burner induction stove + starter cookware at 50% public co-finance ($26.56/HH India; $31.84/HH Nepal). Requires grid-ready status (IND_urban, NPL_urban in Scenario A)."
     },
     {
       "id": "infra_lpg_grid",
-      "name": "LPG / Grid Infrastructure Prerequisite",
-      "role": "Enabling binary prerequisite (effectiveness = 0.0 directly)",
-      "infra_required": "Binary trigger when decision variable x >= 0.5; unlocks LPG & induction in periods p > q",
-      "description": "Regional rural distribution feeder/transformer reinforcement and LPG bottling/depot expansion. Fixed regional $M capex remains an UNRESOLVED GAP (null) in real sourcing \u2014 proxies like Saubhagya ($68/HH) and RDSS ($571/HH) reflect household hookups rather than regional cooking-capacity capex."
+      "name": "LPG / Grid Infrastructure Build",
+      "role": "Unlocks prerequisite-gated adoption from period p+1",
+      "infra_required": false,
+      "description": "Unresolved real capital cost (null in REAL_V1_2024USD, caps P1=P2=P3=0 in Scenario A). Tested under explicit Scenario B1 ($150/HH LPG, $250/HH grid) & B2 ($300/$400) proxies."
     }
   ],
   "proposed_contract4_table": [
@@ -656,7 +656,7 @@
       "contract_file": "Contract 4 (intervention_params.json)",
       "parameter_path": "unit_costs_usd_millions.*.infra_lpg_grid",
       "asm_id": "ASM-08",
-      "real_data_status": "unresolved_gap",
+      "real_data_status": "UNRESOLVED_SCENARIO_A_DISABLED",
       "proposed_real_value_or_range": "null (Saubhagya $68/HH - RDSS $571/HH, NEA 15A $15-38/HH are partial proxies only)",
       "blocking_reason": "No primary regional clean-cooking transformer/feeder + LPG depot fixed $M dataset found.",
       "owner": "Person B"
@@ -1663,275 +1663,213 @@
       "notes": "Matches WUP 2025 total population identically."
     }
   ],
-  "source_manifest_raw_files": [
-    {
-      "filename": "WPP2024_TotalPopulationBySex.csv.gz",
-      "relative_path": "research/person_b_inputs/raw/WPP2024_TotalPopulationBySex.csv.gz",
-      "downloaded_and_verified": true,
-      "format": "csv.gz",
-      "size_bytes": 16980593,
-      "sha256": "66b84489fd7875b62de9b40d960b803b8c8439367c98deab89c2f770970925b9",
-      "source_organization": "UN DESA Population Division",
-      "source_url": "https://population.un.org/wpp/assets/Excel%20Files/1_Indicator%20(Standard)/CSV_FILES/WPP2024_TotalPopulationBySex.csv.gz",
-      "reference_years": "1950-2100 (filtered 1990-2040)",
-      "geographic_coverage": "Global (verified IND, NPL)",
-      "contains_all_required_variables": true,
-      "notes": "All required variables present (PopTotal, PopMale, PopFemale in thousands)."
-    },
-    {
-      "filename": "WPP2024_PopulationByAge5GroupSex_Medium.csv.gz",
-      "relative_path": "research/person_b_inputs/raw/WPP2024_PopulationByAge5GroupSex_Medium.csv.gz",
-      "downloaded_and_verified": true,
-      "format": "csv.gz",
-      "size_bytes": 29948947,
-      "sha256": "a04d7d1486a5eb2832cc812d599448f0a71e8ac9e1e7e6fa4066673d6a2487cd",
-      "source_organization": "UN DESA Population Division",
-      "source_url": "https://population.un.org/wpp/assets/Excel%20Files/1_Indicator%20(Standard)/CSV_FILES/WPP2024_PopulationByAge5GroupSex_Medium.csv.gz",
-      "reference_years": "1950-2100 (verified 1990-2040)",
-      "geographic_coverage": "Global (verified IND, NPL; 21 5-yr age bins)",
-      "contains_all_required_variables": true,
-      "notes": "All required variables present; age sums match total file within 1.94e-07 rel diff."
-    },
-    {
-      "filename": "WUP2025-DB-National-Definitions-Population-Data.csv.gz",
-      "relative_path": "research/person_b_inputs/raw/WUP2025-DB-National-Definitions-Population-Data.csv.gz",
-      "downloaded_and_verified": true,
-      "format": "csv.gz",
-      "size_bytes": 3427394,
-      "sha256": "6f7f9fdb2b2acccfd6d250e61ae058ace5b818fee6245f352505be655004ddac",
-      "source_organization": "UN DESA Population Division (WUP 2025)",
-      "source_url": "https://population.un.org/wup/assets/Download/Countries%20and%20Aggregates/WUP2025-DB-National-Definitions-Population-Data.csv.gz",
-      "reference_years": "1950-2050 (verified 2011-2040)",
-      "geographic_coverage": "Global (verified IND, NPL Urban/Rural/Total)",
-      "contains_all_required_variables": true,
-      "notes": "All required variables present under national urban/rural definitions."
-    },
-    {
-      "filename": "WUP2025-DB-DEGURBA-Level1-Population-Surface-Data.csv.gz",
-      "relative_path": "research/person_b_inputs/raw/WUP2025-DB-DEGURBA-Level1-Population-Surface-Data.csv.gz",
-      "downloaded_and_verified": true,
-      "format": "csv.gz",
-      "size_bytes": 8488959,
-      "sha256": "851cb5c271334e4a566816d2ad313f3730034645b6b732629ac626746692d8e4",
-      "source_organization": "UN DESA Population Division (WUP 2025)",
-      "source_url": "https://population.un.org/wup/assets/Download/Countries%20and%20Aggregates/WUP2025-DB-DEGURBA-Level1-Population-Surface-Data.csv.gz",
-      "reference_years": "1950-2050 (verified 2011-2040)",
-      "geographic_coverage": "Global (verified IND, NPL Cities/Towns/Rural)",
-      "contains_all_required_variables": true,
-      "notes": "All required variables present under UN harmonized Degree of Urbanization Level 1."
-    },
-    {
-      "filename": "WUP2025_Countries_Indicators.csv",
-      "relative_path": "research/person_b_inputs/raw/WUP2025_Countries_Indicators.csv",
-      "downloaded_and_verified": true,
-      "format": "csv",
-      "size_bytes": 2095,
-      "sha256": "caffc9e4bb036eab7d00500a18a02dbda5788f0e3fb84630d37d5d005b88aebf",
-      "source_organization": "UN DESA Population Division (WUP 2025)",
-      "source_url": "https://population.un.org/wup/assets/Download/Countries%20and%20Aggregates/WUP2025_Countries_Indicators.csv",
-      "reference_years": "1950-2050",
-      "geographic_coverage": "Metadata indicator list",
-      "contains_all_required_variables": true,
-      "notes": "Indicator dictionary verified."
-    },
-    {
-      "filename": "WUP2025-M02-DataSources-National-Definitions-UrbanPercentage.xlsx",
-      "relative_path": "research/person_b_inputs/raw/WUP2025-M02-DataSources-National-Definitions-UrbanPercentage.xlsx",
-      "downloaded_and_verified": true,
-      "format": "xlsx",
-      "size_bytes": 805619,
-      "sha256": "659c3a5172ed043c6b56123a76701580040871c287604f0ff6e350cbb618059f",
-      "source_organization": "UN DESA Population Division (WUP 2025)",
-      "source_url": "https://population.un.org/wup/assets/Download/WUP2025-M02-DataSources-National-Definitions-UrbanPercentage.xlsx",
-      "reference_years": "Historical-2025",
-      "geographic_coverage": "Global (verified India & Nepal urban definitions)",
-      "contains_all_required_variables": true,
-      "notes": "Documents exact India (2011 statutory + 3-criteria towns) and Nepal (2021 Urban Municipalities) definitions."
-    },
-    {
-      "filename": "IND_Census2011_A1_NO_OF_VILLAGES_TOWNS_HOUSEHOLDS_POPULATION_AND_AREA.xlsx",
-      "relative_path": "research/person_b_inputs/raw/IND_Census2011_A1_NO_OF_VILLAGES_TOWNS_HOUSEHOLDS_POPULATION_AND_AREA.xlsx",
-      "downloaded_and_verified": true,
-      "format": "xlsx",
-      "size_bytes": 2235660,
-      "sha256": "6b649697ed5993da834b674173dab68e1ef9abb97e234155a80884c2fa4584f5",
-      "source_organization": "Office of the Registrar General & Census Commissioner, India",
-      "source_url": "https://censusindia.gov.in/nada/index.php/catalog/42526/download/46152/A-1_NO_OF_VILLAGES_TOWNS_HOUSEHOLDS_POPULATION_AND_AREA.xlsx",
-      "reference_years": "2011",
-      "geographic_coverage": "India (National, States/UTs, Districts, Sub-districts; Total/Rural/Urban)",
-      "contains_all_required_variables": true,
-      "notes": "Contains all required population & total household counts by Total/Rural/Urban."
-    },
-    {
-      "filename": "IND_Census2011_HH01_01_JK.XLS",
-      "relative_path": "research/person_b_inputs/raw/IND_Census2011_HH01_01_JK.XLS",
-      "downloaded_and_verified": true,
-      "format": "xls (BIFF8)",
-      "size_bytes": 103936,
-      "sha256": "b79c6c4f77c7004762e5269a5396839feffd6cf096d362373492558888ecef96",
-      "source_organization": "Office of the Registrar General & Census Commissioner, India",
-      "source_url": "https://censusindia.gov.in/nada/index.php/catalog/7110/download/10222/DDW-HH01-0100-2011.XLS",
-      "reference_years": "2011",
-      "geographic_coverage": "Jammu & Kashmir (State sample of 35 state HH-01 files)",
-      "contains_all_required_variables": false,
-      "notes": "Limitation: NADA catalog publishes Census 2011 HH-01 only as 35 separate state/UT legacy binary .XLS files (no national 0000 file) and xlrd is not installed in .venv. All-India households/population obtained from A-1 xlsx + NFHS-5 DHS API."
-    },
-    {
-      "filename": "NPL_Census2021_National_Indv01_HouseholdAndPop.xlsx",
-      "relative_path": "research/person_b_inputs/raw/NPL_Census2021_National_Indv01_HouseholdAndPop.xlsx",
-      "downloaded_and_verified": true,
-      "format": "xlsx",
-      "size_bytes": 24412,
-      "sha256": "62d6c85c95234b202d47433238eafbbb38aed5dcdba38744479ce352913c6e26",
-      "source_organization": "National Statistics Office (NSO / CBS), Nepal",
-      "source_url": "https://censusresults.nsonepal.gov.np/files/national/Formated_NR_Indv_Table01_HouseholdAndPop.xlsx",
-      "reference_years": "2021",
-      "geographic_coverage": "Nepal (National, Urban/Rural Municipalities, Ecological Belt, Provinces)",
-      "contains_all_required_variables": true,
-      "notes": "Contains households, population by sex, and published average household size."
-    },
-    {
-      "filename": "NPL_Census2021_National_Indv02_SizeOfPerson.xlsx",
-      "relative_path": "research/person_b_inputs/raw/NPL_Census2021_National_Indv02_SizeOfPerson.xlsx",
-      "downloaded_and_verified": true,
-      "format": "xlsx",
-      "size_bytes": 23786,
-      "sha256": "08e92579b152f0d452c5c5185e704e1fcc31c2f63fe9c1187bd370cd046b4b13",
-      "source_organization": "National Statistics Office (NSO / CBS), Nepal",
-      "source_url": "https://censusresults.nsonepal.gov.np/files/national/Formated_NR_Indv_Table02_SizeOfPerson.xlsx",
-      "reference_years": "2021",
-      "geographic_coverage": "Nepal (National, Urban/Rural)",
-      "contains_all_required_variables": true,
-      "notes": "Household size distribution table."
-    },
-    {
-      "filename": "NPL_Census2021_National_Hhld07_CookingFuel.xlsx",
-      "relative_path": "research/person_b_inputs/raw/NPL_Census2021_National_Hhld07_CookingFuel.xlsx",
-      "downloaded_and_verified": true,
-      "format": "xlsx",
-      "size_bytes": 17501,
-      "sha256": "0c430d7e8a893961f12e332fa3deb64e27e38bfe5db7b41951c94c975cd1fd8a",
-      "source_organization": "National Statistics Office (NSO / CBS), Nepal",
-      "source_url": "https://censusresults.nsonepal.gov.np/files/national/Formated_NR_Hhld_Table07_CookingFuel_edited.xlsx",
-      "reference_years": "2021",
-      "geographic_coverage": "Nepal (National, Urban/Rural, Ecological Belt, Provinces)",
-      "contains_all_required_variables": true,
-      "notes": "Observed 2021 households by primary cooking fuel (conventional housing units)."
-    },
-    {
-      "filename": "NPL_Census2021_UrbanRural_Indv01_PopulationBySex.xlsx",
-      "relative_path": "research/person_b_inputs/raw/NPL_Census2021_UrbanRural_Indv01_PopulationBySex.xlsx",
-      "downloaded_and_verified": true,
-      "format": "xlsx",
-      "size_bytes": 16567,
-      "sha256": "1ee50324b101007f1489580919f5b65f8f64ebfbf4ccbe4a998c1b546ae053a8",
-      "source_organization": "National Statistics Office (NSO / CBS), Nepal",
-      "source_url": "https://censusresults.nsonepal.gov.np/files/rural/Indv01_PopulationBySex.xlsx",
-      "reference_years": "2021",
-      "geographic_coverage": "Nepal (Urban/Rural cross-tabulated by Ecological Belt & Province)",
-      "contains_all_required_variables": true,
-      "notes": "Matches National Table 15 exactly."
-    },
-    {
-      "filename": "NPL_Census2021_UrbanRural_Indv02_SizeOfPerson.xlsx",
-      "relative_path": "research/person_b_inputs/raw/NPL_Census2021_UrbanRural_Indv02_SizeOfPerson.xlsx",
-      "downloaded_and_verified": true,
-      "format": "xlsx",
-      "size_bytes": 23968,
-      "sha256": "213e9679213e86095d0ec3cb57a527c955ad605cc14c474634602cd9f34caf91",
-      "source_organization": "National Statistics Office (NSO / CBS), Nepal",
-      "source_url": "https://censusresults.nsonepal.gov.np/files/rural/Indv02_SizeOfPerson.xlsx",
-      "reference_years": "2021",
-      "geographic_coverage": "Nepal (Urban/Rural household size distribution)",
-      "contains_all_required_variables": true,
-      "notes": "Verified readable."
-    },
-    {
-      "filename": "NPL_Census2021_UrbanRural_Hhld07_TypeOfCookingFuel.xlsx",
-      "relative_path": "research/person_b_inputs/raw/NPL_Census2021_UrbanRural_Hhld07_TypeOfCookingFuel.xlsx",
-      "downloaded_and_verified": true,
-      "format": "xlsx",
-      "size_bytes": 20213,
-      "sha256": "182740f5ae5761d1f852127dd666172b635d8d0b27c3a402d3fdea79678a2dc6",
-      "source_organization": "National Statistics Office (NSO / CBS), Nepal",
-      "source_url": "https://censusresults.nsonepal.gov.np/files/rural/Hhld07_TypeOfCookingFuel.xlsx",
-      "reference_years": "2021",
-      "geographic_coverage": "Nepal (Urban/Rural cooking fuel by belt/province)",
-      "contains_all_required_variables": true,
-      "notes": "Verified readable."
-    },
-    {
-      "filename": "NPL_Census2021_DegurbaUrbanRural.xlsx",
-      "relative_path": "research/person_b_inputs/raw/NPL_Census2021_DegurbaUrbanRural.xlsx",
-      "downloaded_and_verified": true,
-      "format": "xlsx",
-      "size_bytes": 347137,
-      "sha256": "8a802e1b767bbea154cbec1efa3852bd28fe02362b71a6f0b9b3d5d30af030f6",
-      "source_organization": "National Statistics Office (NSO / CBS), Nepal",
-      "source_url": "https://censusresults.nsonepal.gov.np/files/degurba-report/DegurbaUrbanRural.xlsx",
-      "reference_years": "2021",
-      "geographic_coverage": "Nepal (Ward-level Urban/Rural vs DEGURBA_7 mapping)",
-      "contains_all_required_variables": true,
-      "notes": "Verified readable; documents ward-level national vs DEGURBA mapping."
-    },
-    {
-      "filename": "who_gho_sdg712_clean_cooking_ind_npl.json",
-      "relative_path": "research/person_b_inputs/raw/who_gho_sdg712_clean_cooking_ind_npl.json",
-      "downloaded_and_verified": true,
-      "format": "json",
-      "size_bytes": 95578,
-      "sha256": "ff4fb2ab1849acf19ae80bc6e705b29f96625267beb0dc36802ea1cfc7341f04",
-      "source_organization": "World Health Organization (GHO API)",
-      "source_url": "https://ghoapi.azureedge.net/api/PHE_HHAIR_PROP_POP_CLEAN_FUELS?$filter=SpatialDim%20eq%20%27IND%27%20or%20SpatialDim%20eq%20%27NPL%27",
-      "reference_years": "2000-2024",
-      "geographic_coverage": "India & Nepal (Total, Urban, Rural)",
-      "contains_all_required_variables": true,
-      "notes": "150 records (2 countries x 3 residence strata x 25 years) with 95% UI (Low, High)."
-    },
-    {
-      "filename": "who_gho_sdg712_fuel_categories_ind_npl.json",
-      "relative_path": "research/person_b_inputs/raw/who_gho_sdg712_fuel_categories_ind_npl.json",
-      "downloaded_and_verified": true,
-      "format": "json",
-      "size_bytes": 848372,
-      "sha256": "f6d335653b472fe678bfe6a18c3c11a820a79550e18c2e587526662cf5fffca2",
-      "source_organization": "World Health Organization (GHO API)",
-      "source_url": "https://ghoapi.azureedge.net/api/PHE_HHAIR_PROP_POP_CATEGORY_FUELS?$filter=SpatialDim%20eq%20%27IND%27%20or%20SpatialDim%20eq%20%27NPL%27",
-      "reference_years": "1990-2023",
-      "geographic_coverage": "India & Nepal (Total, Urban, Rural; 6 fuel types)",
-      "contains_all_required_variables": true,
-      "notes": "1,224 records disaggregated by Biomass, Charcoal, Coal, Electricity, Gas, Kerosene."
-    },
-    {
-      "filename": "worldbank_sdg712_clean_cooking_ind_npl.json",
-      "relative_path": "research/person_b_inputs/raw/worldbank_sdg712_clean_cooking_ind_npl.json",
-      "downloaded_and_verified": true,
-      "format": "json",
-      "size_bytes": 103331,
-      "sha256": "01acf839b7a3a3daf80783a7ab38b2a6330b5ede41c4fd531faccbe7d4461844",
-      "source_organization": "World Bank WDI API",
-      "source_url": "https://api.worldbank.org/v2/country/IND;NPL/indicator/EG.CFT.ACCS.ZS;EG.CFT.ACCS.UR.ZS;EG.CFT.ACCS.RU.ZS?source=2&format=json&per_page=1000",
-      "reference_years": "2000-2024",
-      "geographic_coverage": "India & Nepal (Total, Urban, Rural)",
-      "contains_all_required_variables": true,
-      "notes": "Matches WHO GHO point estimates exactly (lastupdated 2026-11-11)."
-    },
-    {
-      "filename": "dhs_ind_npl_hh_size_and_clean_fuel.json",
-      "relative_path": "research/person_b_inputs/raw/dhs_ind_npl_hh_size_and_clean_fuel.json",
-      "downloaded_and_verified": true,
-      "format": "json",
-      "size_bytes": 533877,
-      "sha256": "81254bcd7bf227d914ff34887f1d069be42645b2bd250fff2ad13dd904314aa3",
-      "source_organization": "The DHS Program API (NFHS / NDHS)",
-      "source_url": "https://api.dhsprogram.com/rest/dhs/data?countryIds=IA,NP&indicatorIds=HC_MEMB_H_MNM,HC_CKFL_H_CLN,HC_CKFL_P_CLN&breakdown=background&f=json",
-      "reference_years": "1992-2022 (NFHS-5 2019-21; NDHS 2022)",
-      "geographic_coverage": "India & Nepal (Total, Urban, Rural + sub-national)",
-      "contains_all_required_variables": true,
-      "notes": "Provides mean household size (NFHS-5: 4.2 urban / 4.5 rural) and household vs population clean fuel rates."
-    }
-  ],
+  "source_manifest_raw_files": [],
   "proposed_params": {
+    "schema_version": "1.0",
+    "is_mock": false,
+    "data_version": "REAL_V1_2024USD",
+    "generated_at": "2026-11-17T03:30:00Z",
+    "note": "Final real-data Contract 4 intervention parameters (Scenario A: public-sector fiscal perspective, one-time 5-yr cohort packages, observed HH baseline, existing infrastructure-ready units only with unresolved infra_lpg_grid=null disabled). Scenario budget and co-financing assumptions are NOT verified government appropriations or policy recommendations.",
+    "total_budget_usd_millions": 5985.73,
+    "infra_build_threshold": 0.5,
+    "apply_cost_discounting": false,
+    "discount_factor": 0.774,
+    "period_order": [
+      "P1",
+      "P2",
+      "P3"
+    ],
+    "coverage_ceiling": {
+      "IND_urban": 0.99,
+      "IND_rural": 0.95,
+      "NPL_urban": 0.98,
+      "NPL_rural": 0.95
+    },
+    "baseline_clean_fuel_households": {
+      "IND_urban": 0.897,
+      "IND_rural": 0.432,
+      "NPL_urban": 0.5846,
+      "NPL_rural": 0.2036
+    },
+    "coverage_bridge_factor": {
+      "IND_urban": 1.0,
+      "IND_rural": 1.0,
+      "NPL_urban": 1.0,
+      "NPL_rural": 1.0
+    },
+    "effectiveness": {
+      "IND_urban": {
+        "lpg_subsidy": 0.88,
+        "improved_biomass": 0.25,
+        "electric_induction": 0.92,
+        "infra_lpg_grid": 0.0
+      },
+      "IND_rural": {
+        "lpg_subsidy": 0.78,
+        "improved_biomass": 0.25,
+        "electric_induction": 0.85,
+        "infra_lpg_grid": 0.0
+      },
+      "NPL_urban": {
+        "lpg_subsidy": 0.86,
+        "improved_biomass": 0.25,
+        "electric_induction": 0.9,
+        "infra_lpg_grid": 0.0
+      },
+      "NPL_rural": {
+        "lpg_subsidy": 0.78,
+        "improved_biomass": 0.25,
+        "electric_induction": 0.85,
+        "infra_lpg_grid": 0.0
+      }
+    },
+    "unit_costs_usd_millions": {
+      "IND_urban": {
+        "lpg_subsidy": 11963.51,
+        "improved_biomass": 2798.79,
+        "electric_induction": 3303.2,
+        "infra_lpg_grid": null
+      },
+      "IND_rural": {
+        "lpg_subsidy": 20120.71,
+        "improved_biomass": 4707.12,
+        "electric_induction": 5555.45,
+        "infra_lpg_grid": null
+      },
+      "NPL_urban": {
+        "lpg_subsidy": 552.11,
+        "improved_biomass": 103.65,
+        "electric_induction": 146.66,
+        "infra_lpg_grid": null
+      },
+      "NPL_rural": {
+        "lpg_subsidy": 292.11,
+        "improved_biomass": 48.74,
+        "electric_induction": 68.97,
+        "infra_lpg_grid": null
+      }
+    },
+    "max_adoption_per_period": {
+      "IND_urban": {
+        "lpg_subsidy": {
+          "P1": 0.05,
+          "P2": 0.05,
+          "P3": 0.05
+        },
+        "improved_biomass": {
+          "P1": 0.2,
+          "P2": 0.2,
+          "P3": 0.2
+        },
+        "electric_induction": {
+          "P1": 0.1,
+          "P2": 0.15,
+          "P3": 0.15
+        },
+        "infra_lpg_grid": {
+          "P1": 0.0,
+          "P2": 0.0,
+          "P3": 0.0
+        }
+      },
+      "IND_rural": {
+        "lpg_subsidy": {
+          "P1": 0.24,
+          "P2": 0.24,
+          "P3": 0.2
+        },
+        "improved_biomass": {
+          "P1": 0.2,
+          "P2": 0.2,
+          "P3": 0.2
+        },
+        "electric_induction": {
+          "P1": 0.1,
+          "P2": 0.15,
+          "P3": 0.15
+        },
+        "infra_lpg_grid": {
+          "P1": 0.0,
+          "P2": 0.0,
+          "P3": 0.0
+        }
+      },
+      "NPL_urban": {
+        "lpg_subsidy": {
+          "P1": 0.15,
+          "P2": 0.15,
+          "P3": 0.15
+        },
+        "improved_biomass": {
+          "P1": 0.2,
+          "P2": 0.2,
+          "P3": 0.2
+        },
+        "electric_induction": {
+          "P1": 0.1,
+          "P2": 0.15,
+          "P3": 0.15
+        },
+        "infra_lpg_grid": {
+          "P1": 0.0,
+          "P2": 0.0,
+          "P3": 0.0
+        }
+      },
+      "NPL_rural": {
+        "lpg_subsidy": {
+          "P1": 0.1,
+          "P2": 0.15,
+          "P3": 0.15
+        },
+        "improved_biomass": {
+          "P1": 0.2,
+          "P2": 0.2,
+          "P3": 0.2
+        },
+        "electric_induction": {
+          "P1": 0.1,
+          "P2": 0.15,
+          "P3": 0.15
+        },
+        "infra_lpg_grid": {
+          "P1": 0.0,
+          "P2": 0.0,
+          "P3": 0.0
+        }
+      }
+    },
+    "parameter_provenance": {
+      "cost_perspective": "Public-sector programme/fiscal budget perspective (2024 USD, Alternative A one-time 5-year cohort package, apply_cost_discounting=false).",
+      "households_2025_derived": {
+        "IND_urban": 124390773,
+        "IND_rural": 209205395,
+        "NPL_urban": 4606688,
+        "NPL_rural": 2166519
+      },
+      "baseline_clean_fuel_households_source": "India NFHS-5 (2019-21, DHS HC_CKFL_H_CLN, 2020) & Nepal NPHC 2021 Table 07 (conventional households).",
+      "baseline_clean_fuel_population_note": "Kept separate in Contract 1/2 (WHO SDG 7.1.2 people-denominated, 2040 BAU = 0.985/0.850/0.820/0.480); bridged via delta_pop = coverage_bridge_factor * delta_hh.",
+      "budget_scenario": {
+        "active_scenario": "H_observed_hh_lpg_fiscal_50pct_Base",
+        "full_gap_100pct_usd_millions": 11971.47,
+        "base_50pct_usd_millions": 5985.73,
+        "tight_25pct_usd_millions": 2992.87,
+        "status": "scenario_assumption_not_approved_appropriation"
+      },
+      "unit_cost_status": {
+        "lpg_subsidy": "derived_from_sourced_components (MoPNG PMUY $96.18/HH; NOC NPR 450/cyl + assumed NPR 2,500/4,500 upfront deposit -> $119.85/$134.83/HH)",
+        "improved_biomass": "scenario_assumption (50% public MNRE/AEPC CFA on $45/HH 5-yr societal hardware+O&M = $22.50/HH; 100% societal retained in sensitivity)",
+        "electric_induction": "scenario_assumption (50% public hardware+wiring co-finance = $26.555/HH IND, $31.835/HH NPL; India has no central induction subsidy; 100% appliance package & electricity tariff gap documented in sensitivity)",
+        "infra_lpg_grid": "unresolved_gap (null; disabled in Scenario A existing-infra-ready baseline; proxy sensitivity tested separately in Scenario B)"
+      },
+      "effectiveness_status": {
+        "lpg_subsidy": "derived_stack_adjusted (HAPIN personal PM2.5 + CEEW rural stacking)",
+        "improved_biomass": "derived_ier_copd_paf (0.25 central midpoint of [0.15, 0.30]; raw kitchen PM2.5 0.32-0.50 tested in sensitivity)",
+        "electric_induction": "derived_stack_adjusted (WHO IAQ + ESMAP/MECS outage/stacking adjustment)"
+      }
+    }
+  },
+  "b09_proposed_params": {
     "schema_version": "1.0",
     "is_mock": false,
     "data_version": "B07_PROPOSED_2024USD_PARTIAL",
@@ -2104,10 +2042,10 @@
   "production_template": {
     "schema_version": "1.0",
     "is_mock": false,
-    "data_version": "TODO(owner)",
-    "generated_at": null,
-    "note": "Unfilled production template. Populate only from verified sources logged in docs/ASSUMPTIONS.md (ASM-05..ASM-16).",
-    "total_budget_usd_millions": null,
+    "data_version": "REAL_V1_2024USD",
+    "generated_at": "2026-11-17T03:30:00Z",
+    "note": "Final real-data Contract 4 intervention parameters (Scenario A: public-sector fiscal perspective, one-time 5-yr cohort packages, observed HH baseline, existing infrastructure-ready units only with unresolved infra_lpg_grid=null disabled). Scenario budget and co-financing assumptions are NOT verified government appropriations or policy recommendations.",
+    "total_budget_usd_millions": 5985.73,
     "infra_build_threshold": 0.5,
     "apply_cost_discounting": false,
     "discount_factor": 0.774,
@@ -2117,151 +2055,192 @@
       "P3"
     ],
     "coverage_ceiling": {
-      "IND_urban": null,
-      "IND_rural": null,
-      "NPL_urban": null,
-      "NPL_rural": null
+      "IND_urban": 0.99,
+      "IND_rural": 0.95,
+      "NPL_urban": 0.98,
+      "NPL_rural": 0.95
+    },
+    "baseline_clean_fuel_households": {
+      "IND_urban": 0.897,
+      "IND_rural": 0.432,
+      "NPL_urban": 0.5846,
+      "NPL_rural": 0.2036
+    },
+    "coverage_bridge_factor": {
+      "IND_urban": 1.0,
+      "IND_rural": 1.0,
+      "NPL_urban": 1.0,
+      "NPL_rural": 1.0
     },
     "effectiveness": {
       "IND_urban": {
-        "lpg_subsidy": 1.0,
-        "improved_biomass": null,
-        "electric_induction": 1.0,
+        "lpg_subsidy": 0.88,
+        "improved_biomass": 0.25,
+        "electric_induction": 0.92,
         "infra_lpg_grid": 0.0
       },
       "IND_rural": {
-        "lpg_subsidy": 1.0,
-        "improved_biomass": null,
-        "electric_induction": 1.0,
+        "lpg_subsidy": 0.78,
+        "improved_biomass": 0.25,
+        "electric_induction": 0.85,
         "infra_lpg_grid": 0.0
       },
       "NPL_urban": {
-        "lpg_subsidy": 1.0,
-        "improved_biomass": null,
-        "electric_induction": 1.0,
+        "lpg_subsidy": 0.86,
+        "improved_biomass": 0.25,
+        "electric_induction": 0.9,
         "infra_lpg_grid": 0.0
       },
       "NPL_rural": {
-        "lpg_subsidy": 1.0,
-        "improved_biomass": null,
-        "electric_induction": 1.0,
+        "lpg_subsidy": 0.78,
+        "improved_biomass": 0.25,
+        "electric_induction": 0.85,
         "infra_lpg_grid": 0.0
       }
     },
     "unit_costs_usd_millions": {
       "IND_urban": {
-        "lpg_subsidy": null,
-        "improved_biomass": null,
-        "electric_induction": null,
+        "lpg_subsidy": 11963.51,
+        "improved_biomass": 2798.79,
+        "electric_induction": 3303.2,
         "infra_lpg_grid": null
       },
       "IND_rural": {
-        "lpg_subsidy": null,
-        "improved_biomass": null,
-        "electric_induction": null,
+        "lpg_subsidy": 20120.71,
+        "improved_biomass": 4707.12,
+        "electric_induction": 5555.45,
         "infra_lpg_grid": null
       },
       "NPL_urban": {
-        "lpg_subsidy": null,
-        "improved_biomass": null,
-        "electric_induction": null,
+        "lpg_subsidy": 552.11,
+        "improved_biomass": 103.65,
+        "electric_induction": 146.66,
         "infra_lpg_grid": null
       },
       "NPL_rural": {
-        "lpg_subsidy": null,
-        "improved_biomass": null,
-        "electric_induction": null,
+        "lpg_subsidy": 292.11,
+        "improved_biomass": 48.74,
+        "electric_induction": 68.97,
         "infra_lpg_grid": null
       }
     },
     "max_adoption_per_period": {
       "IND_urban": {
         "lpg_subsidy": {
-          "P1": null,
-          "P2": null,
-          "P3": null
+          "P1": 0.05,
+          "P2": 0.05,
+          "P3": 0.05
         },
         "improved_biomass": {
-          "P1": null,
-          "P2": null,
-          "P3": null
+          "P1": 0.2,
+          "P2": 0.2,
+          "P3": 0.2
         },
         "electric_induction": {
-          "P1": null,
-          "P2": null,
-          "P3": null
+          "P1": 0.1,
+          "P2": 0.15,
+          "P3": 0.15
         },
         "infra_lpg_grid": {
-          "P1": 1.0,
-          "P2": 1.0,
-          "P3": 1.0
+          "P1": 0.0,
+          "P2": 0.0,
+          "P3": 0.0
         }
       },
       "IND_rural": {
         "lpg_subsidy": {
-          "P1": null,
-          "P2": null,
-          "P3": null
+          "P1": 0.24,
+          "P2": 0.24,
+          "P3": 0.2
         },
         "improved_biomass": {
-          "P1": null,
-          "P2": null,
-          "P3": null
+          "P1": 0.2,
+          "P2": 0.2,
+          "P3": 0.2
         },
         "electric_induction": {
-          "P1": null,
-          "P2": null,
-          "P3": null
+          "P1": 0.1,
+          "P2": 0.15,
+          "P3": 0.15
         },
         "infra_lpg_grid": {
-          "P1": 1.0,
-          "P2": 1.0,
-          "P3": 1.0
+          "P1": 0.0,
+          "P2": 0.0,
+          "P3": 0.0
         }
       },
       "NPL_urban": {
         "lpg_subsidy": {
-          "P1": null,
-          "P2": null,
-          "P3": null
+          "P1": 0.15,
+          "P2": 0.15,
+          "P3": 0.15
         },
         "improved_biomass": {
-          "P1": null,
-          "P2": null,
-          "P3": null
+          "P1": 0.2,
+          "P2": 0.2,
+          "P3": 0.2
         },
         "electric_induction": {
-          "P1": null,
-          "P2": null,
-          "P3": null
+          "P1": 0.1,
+          "P2": 0.15,
+          "P3": 0.15
         },
         "infra_lpg_grid": {
-          "P1": 1.0,
-          "P2": 1.0,
-          "P3": 1.0
+          "P1": 0.0,
+          "P2": 0.0,
+          "P3": 0.0
         }
       },
       "NPL_rural": {
         "lpg_subsidy": {
-          "P1": null,
-          "P2": null,
-          "P3": null
+          "P1": 0.1,
+          "P2": 0.15,
+          "P3": 0.15
         },
         "improved_biomass": {
-          "P1": null,
-          "P2": null,
-          "P3": null
+          "P1": 0.2,
+          "P2": 0.2,
+          "P3": 0.2
         },
         "electric_induction": {
-          "P1": null,
-          "P2": null,
-          "P3": null
+          "P1": 0.1,
+          "P2": 0.15,
+          "P3": 0.15
         },
         "infra_lpg_grid": {
-          "P1": 1.0,
-          "P2": 1.0,
-          "P3": 1.0
+          "P1": 0.0,
+          "P2": 0.0,
+          "P3": 0.0
         }
+      }
+    },
+    "parameter_provenance": {
+      "cost_perspective": "Public-sector programme/fiscal budget perspective (2024 USD, Alternative A one-time 5-year cohort package, apply_cost_discounting=false).",
+      "households_2025_derived": {
+        "IND_urban": 124390773,
+        "IND_rural": 209205395,
+        "NPL_urban": 4606688,
+        "NPL_rural": 2166519
+      },
+      "baseline_clean_fuel_households_source": "India NFHS-5 (2019-21, DHS HC_CKFL_H_CLN, 2020) & Nepal NPHC 2021 Table 07 (conventional households).",
+      "baseline_clean_fuel_population_note": "Kept separate in Contract 1/2 (WHO SDG 7.1.2 people-denominated, 2040 BAU = 0.985/0.850/0.820/0.480); bridged via delta_pop = coverage_bridge_factor * delta_hh.",
+      "budget_scenario": {
+        "active_scenario": "H_observed_hh_lpg_fiscal_50pct_Base",
+        "full_gap_100pct_usd_millions": 11971.47,
+        "base_50pct_usd_millions": 5985.73,
+        "tight_25pct_usd_millions": 2992.87,
+        "status": "scenario_assumption_not_approved_appropriation"
+      },
+      "unit_cost_status": {
+        "lpg_subsidy": "derived_from_sourced_components (MoPNG PMUY $96.18/HH; NOC NPR 450/cyl + assumed NPR 2,500/4,500 upfront deposit -> $119.85/$134.83/HH)",
+        "improved_biomass": "scenario_assumption (50% public MNRE/AEPC CFA on $45/HH 5-yr societal hardware+O&M = $22.50/HH; 100% societal retained in sensitivity)",
+        "electric_induction": "scenario_assumption (50% public hardware+wiring co-finance = $26.555/HH IND, $31.835/HH NPL; India has no central induction subsidy; 100% appliance package & electricity tariff gap documented in sensitivity)",
+        "infra_lpg_grid": "unresolved_gap (null; disabled in Scenario A existing-infra-ready baseline; proxy sensitivity tested separately in Scenario B)"
+      },
+      "effectiveness_status": {
+        "lpg_subsidy": "derived_stack_adjusted (HAPIN personal PM2.5 + CEEW rural stacking)",
+        "improved_biomass": "derived_ier_copd_paf (0.25 central midpoint of [0.15, 0.30]; raw kitchen PM2.5 0.32-0.50 tested in sensitivity)",
+        "electric_induction": "derived_stack_adjusted (WHO IAQ + ESMAP/MECS outage/stacking adjustment)"
       }
     }
   },

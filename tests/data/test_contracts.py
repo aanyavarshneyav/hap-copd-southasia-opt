@@ -26,7 +26,8 @@ from src.data.mock import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CONFIG_PATH = REPO_ROOT / "configs" / "default.yaml"
+CONFIG_PATH = REPO_ROOT / "configs" / "mock.yaml"
+REAL_CONFIG_PATH = REPO_ROOT / "configs" / "default.yaml"
 
 
 @pytest.fixture()
@@ -170,6 +171,23 @@ def test_intervention_params_validation_failures(
     with pytest.raises(ContractValidationError, match="unit_costs_usd_millions"):
         validate_intervention_params_json(bad_cost, config)
 
+    # Null infra cost with non-zero caps must fail (never treat null as zero)
+    null_infra_enabled = copy.deepcopy(valid_params)
+    null_infra_enabled["unit_costs_usd_millions"]["NPL_rural"]["infra_lpg_grid"] = None
+    with pytest.raises(ContractValidationError, match="null infrastructure cost"):
+        validate_intervention_params_json(null_infra_enabled, config)
+
+    # Null infra cost with 0.0 caps across all periods (Scenario A disabled) must pass
+    null_infra_disabled = copy.deepcopy(valid_params)
+    for u in null_infra_disabled["unit_costs_usd_millions"]:
+        null_infra_disabled["unit_costs_usd_millions"][u]["infra_lpg_grid"] = None
+        null_infra_disabled["max_adoption_per_period"][u]["infra_lpg_grid"] = {
+            "P1": 0.0,
+            "P2": 0.0,
+            "P3": 0.0,
+        }
+    validate_intervention_params_json(null_infra_disabled, config)
+
 
 def test_loader_rejects_mock_files_when_use_mock_false(
     tmp_path: Path, config: dict[str, Any]
@@ -187,3 +205,13 @@ def test_loader_rejects_mock_files_when_use_mock_false(
     ]
     with pytest.raises(ContractValidationError, match="Expected is_mock=False"):
         load_stage3_contracts(prod_cfg, base_dir=tmp_path)
+
+
+def test_real_production_contracts_load_cleanly() -> None:
+    real_cfg = load_config(REAL_CONFIG_PATH)
+    bundle = load_stage3_contracts(real_cfg, base_dir=REPO_ROOT)
+    assert bundle.is_mock is False
+    assert bool(bundle.forecasts_stage3["is_mock"].any()) is False
+    assert bool(bundle.baseline_unit_state["is_mock"].any()) is False
+    assert bundle.surrogate["is_mock"] is False
+    assert bundle.intervention_params["is_mock"] is False

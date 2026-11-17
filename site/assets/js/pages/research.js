@@ -72,7 +72,7 @@
           <span class="page-eyebrow">07 · Methodology, Limitations &amp; Open Reproducibility</span>
           <div class="page-header-meta" style="margin-top:0;">
             <span class="badge badge-real">Python 3.12 · Offline Reproducible</span>
-            <span class="badge badge-green">pytest: 37/37 Passing</span>
+            <span class="badge badge-green">pytest: 59/59 Core Suite Passing</span>
           </div>
         </div>
         <h1 class="page-title">Research, Limitations &amp; Reproducibility</h1>
